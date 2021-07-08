@@ -8,10 +8,10 @@
 import Foundation
 import UIKit
 
-class NeuralNetworkML {
-    private var brain: [Perceptron]!
+class Brain {
+    private var neuralNetwork: [Perceptron]!
     
     init() {
-     brain = [Perceptron]()
+        neuralNetwork = [Perceptron]()
     }
 }
