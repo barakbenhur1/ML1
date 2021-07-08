@@ -12,7 +12,7 @@ class ViewController: UIViewController {
     var a: CGFloat!
     var b: CGFloat!
     
-    var epsilon = 0.006
+    var epsilon = 0.01
     
     func drawLine(imageView: UIImageView, from fromPoint: CGPoint, to toPoint: CGPoint, lineW: CGFloat ,alpha: CGFloat, color: UIColor) {
         UIGraphicsBeginImageContextWithOptions(view.bounds.size, false, 0)
@@ -76,10 +76,10 @@ class ViewController: UIViewController {
         DispatchQueue.init(label: "Train").async { [self] in
             while train {
                 
-                let sy = CGFloat((-p.getWeights()[2] - p.getWeights()[0] * Double(x1)) / p.getWeights()[1])
-                let ey: CGFloat = CGFloat((-p.getWeights()[2] - p.getWeights()[0] * Double(x2)) / p.getWeights()[1])
+                let sy = p.getY(for: x1)
+                let ey: CGFloat = p.getY(for: x2)
                 DispatchQueue.main.async {
-                    drawLine(imageView: imgv, from: CGPoint(x: x1, y: sy), to: CGPoint(x: x2, y: ey), lineW: 0.6, alpha: 0.6, color: .systemGreen)
+                    drawLine(imageView: imgv, from: CGPoint(x: x1, y: sy), to: CGPoint(x: x2, y: ey), lineW: 0.6, alpha: 0.4, color: .systemGreen)
                 }
                 
                 t = [Trainer]()
@@ -104,13 +104,13 @@ class ViewController: UIViewController {
                 //                for i in 0..<t.count {
                 let x = x1
                 let answerY = lineAnswer(a: a, x: CGFloat(x), b: b)
-                let guessY = (-p.getWeights()[2] - p.getWeights()[0] * Double(x)) / p.getWeights()[1]
+                let guessY: Double = Double(p.getY(for: x))
                 print("y = \(answerY)")
                 print("y guess = \(guessY)")
                 
                 let xe = x2
                 let answerYe = lineAnswer(a: a, x: CGFloat(xe), b: b)
-                let guessYe = (-p.getWeights()[2] - p.getWeights()[0] * Double(xe)) / p.getWeights()[1]
+                let guessYe: Double = Double(p.getY(for: xe))
                 print("ye = \(answerYe)")
                 print("ye guess = \(guessYe)")
                 
@@ -134,15 +134,15 @@ class ViewController: UIViewController {
             for i in 0..<t.count {
                 let x = t[i].inputs[0]
                 print("y = \(lineAnswer(a: a, x: CGFloat(x), b: b))")
-                print("y guess = \((-p.getWeights()[2] - p.getWeights()[0] * Double(x)) / p.getWeights()[1])")
+                print("y guess = \(p.getY(for: CGFloat(x)))")
                 print("\n")
             }
             
             print("================Step \(loop)=========================")
             
             DispatchQueue.main.async {
-                let sy = CGFloat((-p.getWeights()[2] - p.getWeights()[0] * Double(x1)) / p.getWeights()[1])
-                let ey: CGFloat = CGFloat((-p.getWeights()[2] - p.getWeights()[0] * Double(x2)) / p.getWeights()[1])
+                let sy = p.getY(for: x1)
+                let ey = p.getY(for: x2)
                 drawLine(imageView: imgv, from: CGPoint(x: x1, y: sy), to: CGPoint(x: x2, y: ey), lineW: 8, alpha: 0.4, color: .blue)
             }
         }
