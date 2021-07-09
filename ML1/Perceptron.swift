@@ -51,7 +51,7 @@ class Perceptron {
         return weights
     }
     
-    func getY(for x: CGFloat) -> CGFloat {
-        return CGFloat((-getWeights()[2] - getWeights()[0] * Double(x)) / getWeights()[1])
+    func getY(for x: CGFloat) -> Double {
+        return (-getWeights()[2] - getWeights()[0] * Double(x)) / getWeights()[1]
     }
 }

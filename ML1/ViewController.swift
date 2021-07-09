@@ -12,7 +12,9 @@ class ViewController: UIViewController {
     var a: CGFloat!
     var b: CGFloat!
     
-    var epsilon = 0.01
+    let p = Perceptron(lerningRate: 0.1, numOfweights: 2)
+    
+    var epsilon = 0.1
     
     func drawLine(imageView: UIImageView, from fromPoint: CGPoint, to toPoint: CGPoint, lineW: CGFloat ,alpha: CGFloat, color: UIColor) {
         UIGraphicsBeginImageContextWithOptions(view.bounds.size, false, 0)
@@ -37,9 +39,14 @@ class ViewController: UIViewController {
         //        imageView.setNeedsDisplay()
     }
     
+    @objc private func getValue(text: String) {
+        guard let n = NumberFormatter().number(from: text) else { return }
+        print("F( \(text) ) = y: \(lineAnswer(a: a, x: CGFloat(truncating: n), b: b)), y guess: \(p.getY(for: CGFloat(truncating: n)) + Double(b))")
+    }
+   
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+    
         let imgv = UIImageView(frame: self.view.frame)
         
         //        DispatchQueue.main.async {
@@ -50,8 +57,18 @@ class ViewController: UIViewController {
         
         imgv.backgroundColor = .systemGray3
         
-        a = 2.8
-        b = -6.4
+        let textView = UITextField(frame: CGRect(origin: CGPoint(x: view.frame.width - 220, y: 60), size: CGSize(width: 200, height: 40)))
+        
+        view.addSubview(textView)
+        
+        textView.backgroundColor = .lightGray
+        
+        textView.placeholder = "Guess Y"
+        
+        textView.delegate = self
+        
+        a = 4.9
+        b = -5.12
         //        }
         
         let x1: CGFloat = 20
@@ -64,10 +81,8 @@ class ViewController: UIViewController {
         
         var loop = 0
         
-        let num: Int = 2000
+        let num: Int = 4000
         //        let end: CGFloat = 1
-        
-        let p = Perceptron(lerningRate: 0.1, numOfweights: 2)
         
         var train = true
         
@@ -76,10 +91,10 @@ class ViewController: UIViewController {
         DispatchQueue.init(label: "Train").async { [self] in
             while train {
                 
-                let sy = p.getY(for: x1)
-                let ey: CGFloat = p.getY(for: x2)
+                let sy = CGFloat(p.getY(for: x1)) + b
+                let ey = CGFloat(p.getY(for: x2)) + b
                 DispatchQueue.main.async {
-                    drawLine(imageView: imgv, from: CGPoint(x: x1, y: sy), to: CGPoint(x: x2, y: ey), lineW: 0.6, alpha: 0.4, color: .systemGreen)
+                    drawLine(imageView: imgv, from: CGPoint(x: x1, y: sy), to: CGPoint(x: x2, y: ey), lineW: 0.6, alpha: 0.4, color: UIColor(red: 30, green: CGFloat.random(in: 0...1), blue: CGFloat.random(in: 0...1), alpha: 1))
                 }
                 
                 t = [Trainer]()
@@ -99,22 +114,20 @@ class ViewController: UIViewController {
                 
                 var stop = true
                 
-                let percision: Double = 1000
+//                let percision: Double = 1
                 
                 //                for i in 0..<t.count {
-                let x = x1
-                let answerY = lineAnswer(a: a, x: CGFloat(x), b: b)
-                let guessY: Double = Double(p.getY(for: x))
+                let answerY = lineAnswer(a: a, x: CGFloat(x1), b: b)
+                let guessY = p.getY(for: x1) + Double(b)
                 print("y = \(answerY)")
                 print("y guess = \(guessY)")
                 
-                let xe = x2
-                let answerYe = lineAnswer(a: a, x: CGFloat(xe), b: b)
-                let guessYe: Double = Double(p.getY(for: xe))
+                let answerYe = lineAnswer(a: a, x: CGFloat(x2), b: b)
+                let guessYe = p.getY(for: x2) + Double(b)
                 print("ye = \(answerYe)")
                 print("ye guess = \(guessYe)")
                 
-                if abs((round(percision * answerY)/percision) - (round(percision * guessY)/percision)) >= epsilon && abs((round(percision * answerYe)/percision) - (round(percision * guessYe)/percision)) >= epsilon {
+                if abs(((answerY)) - ((guessY))) > epsilon || abs(((answerYe)) - ((guessYe))) > epsilon {
                     stop = false
                     //                        break
                 }
@@ -134,16 +147,16 @@ class ViewController: UIViewController {
             for i in 0..<t.count {
                 let x = t[i].inputs[0]
                 print("y = \(lineAnswer(a: a, x: CGFloat(x), b: b))")
-                print("y guess = \(p.getY(for: CGFloat(x)))")
+                print("y guess = \(p.getY(for: CGFloat(x)) + Double(b))")
                 print("\n")
             }
             
             print("================Step \(loop)=========================")
             
             DispatchQueue.main.async {
-                let sy = p.getY(for: x1)
-                let ey = p.getY(for: x2)
-                drawLine(imageView: imgv, from: CGPoint(x: x1, y: sy), to: CGPoint(x: x2, y: ey), lineW: 8, alpha: 0.4, color: .blue)
+                let sy = CGFloat(p.getY(for: x1) + Double(b))
+                let ey = CGFloat(p.getY(for: x2) + Double(b))
+                drawLine(imageView: imgv, from: CGPoint(x: x1, y: sy), to: CGPoint(x: x2, y: ey), lineW: 8, alpha: 0.8, color: .blue)
             }
         }
     }
@@ -156,6 +169,16 @@ class ViewController: UIViewController {
     func lineAnswer(a: CGFloat, x: CGFloat, b: CGFloat) -> Double {
         let formula = a * x + b
         return Double(formula)
+    }
+}
+
+extension ViewController : UITextFieldDelegate {
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        
+        guard string != "" else { return true }
+        getValue(text: textField.text! + string)
+        
+        return true
     }
 }
 
