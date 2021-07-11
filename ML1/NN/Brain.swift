@@ -8,13 +8,55 @@
 import Foundation
 import UIKit
 
-fileprivate let singalSem: DispatchSemaphore = DispatchSemaphore(value: 1)
-private let iterations = 1000
-private let randomCaycles = 1000
+fileprivate var singalSem: DispatchSemaphore? = DispatchSemaphore(value: 1)
 
-class Brain<T: FloatingPoint> {
+private var stopStatic = false
+
+class Brain<T: FloatingPoint & Codable>: Codable {
     
 //    private var neuralNetwork: [Perceptron]!
+    
+    enum CodingKeys: String, CodingKey {
+        case number_of_input, number_of_hidden, number_of_outputs, input_to_hidden, hidden_to_output, bias_hidden, bias_output, learning_rate, iterations, randomCaycles
+    }
+    
+    private lazy var description = {
+        return String(UInt(bitPattern: ObjectIdentifier(self)))
+    }()
+    
+    public required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        number_of_input = try container.decode(Int.self, forKey: .number_of_input)
+        number_of_hidden = try container.decode(Int.self, forKey: .number_of_hidden)
+        number_of_outputs = try container.decode(Int.self, forKey: .number_of_outputs)
+        input_to_hidden = try container.decode(Matrix<T>.self, forKey: .input_to_hidden)
+        hidden_to_output = try container.decode(Matrix<T>.self, forKey: .hidden_to_output)
+        bias_hidden = try container.decode(Matrix<T>.self, forKey: .bias_hidden)
+        bias_output = try container.decode(Matrix<T>.self, forKey: .bias_output)
+        learning_rate = try container.decode(T.self, forKey: .learning_rate)
+        iterations = try container.decode(Int.self, forKey: .iterations)
+        randomCaycles = try container.decode(Int.self, forKey: .randomCaycles)
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(number_of_input, forKey: .number_of_input)
+        try container.encode(number_of_hidden, forKey: .number_of_hidden)
+        try container.encode(number_of_outputs, forKey: .number_of_outputs)
+        try container.encode(input_to_hidden, forKey: .input_to_hidden)
+        try container.encode(hidden_to_output, forKey: .hidden_to_output)
+        try container.encode(bias_hidden, forKey: .bias_hidden)
+        try container.encode(bias_output, forKey: .bias_output)
+        try container.encode(learning_rate, forKey: .learning_rate)
+        try container.encode(iterations, forKey: .iterations)
+        try container.encode(randomCaycles, forKey: .randomCaycles)
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        self.hash(into: &hasher)
+        "\(self)".hash(into: &hasher)
+    }
+    
     
     private let number_of_input: Int!
     private let number_of_hidden: Int!
@@ -26,11 +68,20 @@ class Brain<T: FloatingPoint> {
     private let bias_hidden: Matrix<T>!
     private let bias_output: Matrix<T>!
     
-    private let learning_rate: T!
+    private var learning_rate: T!
     
     private var activeFunction: ((T) -> (T))!
+    private var deActiveFunction: ((T) -> (T))!
     
     private var sem = DispatchSemaphore(value: 1)
+    
+    private var iterations = 3000
+    
+    private var randomCaycles = 2000
+    
+    deinit {
+        
+    }
     
     init(number_of_input: Int, number_of_hidden: Int, number_of_outputs: Int, learning_rate: T = learningRate(), valueInitFunction: @escaping () -> (T)) {
         self.number_of_input = number_of_input
@@ -134,16 +185,18 @@ class Brain<T: FloatingPoint> {
     
     private static func create<T: FloatingPoint>(file: String, number_of_input: Int, number_of_hidden: Int, number_of_outputs: Int, valueInitFunction: @escaping  (() -> (T)), learning_rate: @escaping () -> (T)) -> Brain<T> {
         
+        guard (singalSem != nil) else { fatalError("Error Occurred") }
+        
         let name = String(describing: file)
         
-        singalSem.wait()
+        singalSem?.wait()
         if  Brain<T>.getInstances()![name] == nil {
             let o = Brain<T>(number_of_input: number_of_input, number_of_hidden: number_of_hidden, number_of_outputs: number_of_outputs, learning_rate: learning_rate(), valueInitFunction: valueInitFunction)
             Brain<T>.addInstances(key: name, value: o)
         }
         
         defer {
-            singalSem.signal()
+            singalSem?.signal()
         }
         
         
@@ -179,43 +232,181 @@ class Brain<T: FloatingPoint> {
             }
         }
     }
+    
+    private var brainObj: ((Brain<T>) -> ())?
+    
+    private var stopRun: Bool = false
+    
+    static func stop() {
+        stopStatic = true
+    }
+    
+    func stop() {
+        stopRun = true
+    }
 
-    func start(inputs: [[T]], targets: [[T]], file: String = #file, line: Int = #line, function: String = #function, ativtionMethod: ActivationMethod = .sigmoid, learning_rate: T? = nil, valueInitFunction: (() -> (T))? = nil) {
+    func start(inputs: [[T]], targets: [[T]], iterations: Int? = nil, numberTraningsForIteration: Int? = nil, file: String = #file, line: Int = #line, function: String = #function, ativtionMethod: ActivationMethod = .sigmoid, valueInitFunction: (() -> (T))? = nil, progressUpdate: ((_ iteration: Int) -> ())? = nil, completed: (() -> ())? = nil) {
         
-        let activeFunction = ativtionMethod.getActivtionMethod()
-        let deActiveFunction = ativtionMethod.getDeActivtionMethod()
-        self.activeFunction = activeFunction
+        stopRun = false
+        stopStatic = false
         
-        for _ in 0..<iterations {
+        set_ativtion_method(ativtionMethod)
+        set_learning_iterations(iterations: iterations ?? self.iterations)
+        set_learning_number_tranings_for_iteration(number: numberTraningsForIteration ?? self.randomCaycles)
+        
+        brainObj?(self)
+        
+        for i in 0..<self.iterations {
+            guard !stopRun && !stopStatic else { return }
             for _ in 0..<randomCaycles {
+                guard !stopRun && !stopStatic else { return }
                 let index = Int.random(in: 0..<inputs.count)
                 train(inputs: inputs[index], targets: targets[index] ,activeFunction: activeFunction, deActiveFunction: deActiveFunction)
             }
+            
+            progressUpdate?(i)
         }
+        
+        completed?()
     }
     
-    static func start(inputs: [[T]], targets: [[T]], file: String = #file, line: Int = #line, function: String = #function, ativtionMethod: ActivationMethod = .sigmoid, learning_rate: T? = nil, valueInitFunction: (() -> (T))? = nil, brainObj: @escaping (Brain<T>) -> (), completed: @escaping  () -> ()) {
+    static func start(inputs: [[T]], targets: [[T]], iterations: Int? = nil, numberTraningsForIteration: Int? = nil, file: String = #file, line: Int = #line, function: String = #function, ativtionMethod: ActivationMethod = .sigmoid, learning_rate: T? = nil, valueInitFunction: (() -> (T))? = nil, brainObj: @escaping (Brain<T>) -> (), progressUpdate: ((_ iteration: Int) -> ())? = nil, completed: (() -> ())? = nil) {
         let number_of_hidden = inputs[0].count
         let brain = Brain<T>.create(file: file, number_of_input: inputs[0].count, number_of_hidden: number_of_hidden, number_of_outputs: targets[0].count, valueInitFunction: {
             return valueInitFunction != nil ? valueInitFunction!() : random()
         }, learning_rate: {
             return learning_rate ?? learningRate()
         })
+        
+        brain.brainObj = brainObj
 
-        let activeFunction = ativtionMethod.getActivtionMethod()
-        let deActiveFunction = ativtionMethod.getDeActivtionMethod()
-        brain.activeFunction = activeFunction
+        brain.start(inputs: inputs, targets: targets, iterations: iterations, numberTraningsForIteration: numberTraningsForIteration, ativtionMethod: ativtionMethod, valueInitFunction: valueInitFunction, progressUpdate: progressUpdate, completed: completed)
+    }
+    
+    func set_learning_iterations(iterations: Int) {
+        self.iterations = iterations
+    }
+    
+    func set_learning_number_tranings_for_iteration(number: Int) {
+        self.randomCaycles = number
+    }
+    
+    func set_learning_rate(learning_rate: T) {
+        self.learning_rate = learning_rate
+    }
+    
+    func set_ativtion_method(_ activationMethod: ActivationMethod) {
+        self.activeFunction = activationMethod.getActivtionMethod()
+        self.deActiveFunction = activationMethod.getDeActivtionMethod()
+    }
+    
+    func printDescription(inputs:[[T]], targets: [[T]], title: String) {
         
-        brainObj(brain)
+        var strings = [String]()
+       
+        for i in 0..<inputs.count {
+            let s = "Input: \(inputs[i]), Prediction: \(predict(inputs: inputs[i] )), Real Answer: \(targets[i])"
+            strings.append(s)
+        }
         
-        for _ in 0..<iterations {
-            for _ in 0..<randomCaycles {
-                let index = Int.random(in: 0..<inputs.count)
-                brain.train(inputs: inputs[index], targets: targets[index] ,activeFunction: activeFunction, deActiveFunction: deActiveFunction)
+        var max = 0
+        
+        for s in strings {
+            if max < s.count {
+                max = s.count
             }
         }
         
-        completed()
+        let s = String(repeating: "=", count:(max / 2) - (title.count / 2) + 8)
+        print("\(s)\(title)\(s)")
+        print("        \(strings[0])")
+        print("        \(strings[1])")
+        print("        \(strings[2])")
+        print("        \(strings[3])")
+        print("\(s)\(String(repeating: "=", count: title.count))\(s)")
+        print()
+    }
+    
+    @discardableResult private func saveGeneration(key: String) -> Bool {
+        if let documentDirectory = FileManager.default.urls(for: .documentDirectory,
+                                                            in: .userDomainMask).first {
+            let pathWithFilename = documentDirectory.appendingPathComponent("ML+\(key).json")
+            do {
+                let jsonEncoder = JSONEncoder()
+                let jsonData = try jsonEncoder.encode(self)
+                let jsonString = String(data: jsonData, encoding: String.Encoding.utf8)
+                try jsonString?.write(to: pathWithFilename,
+                                     atomically: true,
+                                     encoding: .utf8)
+                return true
+            } catch {
+                print("save fail: \(error.localizedDescription)")
+                return false
+            }
+        }
+        
+        return false
+    }
+    
+    
+    private static func readLocalJSONFile(forName name: String) -> Data? {
+        do {
+            if let documentDirectory = FileManager.default.urls(for: .documentDirectory,
+                                                                in: .userDomainMask).first {
+                let fileURL = documentDirectory.appendingPathComponent("\(name).json")
+                //                let fileUrl = URL(fileURLWithPath: filePath)
+                let data = try Data(contentsOf: fileURL)
+                return data
+            }
+        } catch {
+            print("error: \(error)")
+        }
+        return nil
+    }
+    
+    private static func parse(jsonData: Data) -> Brain<T>? {
+        do {
+            let decodedData = try JSONDecoder().decode(Brain<T>.self, from: jsonData)
+            return decodedData
+        } catch {
+            print("error: \(error)")
+        }
+        return nil
+    }
+    
+    @discardableResult static private func loadGeneration(key: String) -> Brain<T>? {
+        if let data = readLocalJSONFile(forName: "ML+\(key)") {
+            guard let ml = parse(jsonData: data) else {
+                return nil
+            }
+            
+            if singalSem == nil {
+                singalSem =  DispatchSemaphore(value: 1)
+            }
+           
+            ml.sem = DispatchSemaphore(value: 1)
+            
+            let method: ActivationMethod = .sigmoid
+            ml.activeFunction = method.getActivtionMethod()
+            ml.activeFunction = method.getDeActivtionMethod()
+            
+            return ml
+        }
+        
+        return nil
+    }
+    
+    func save(name: String = "ML") {
+        let success = saveGeneration(key: name)
+        print(success)
+    }
+    
+    func load(name: String = "ML") -> Brain<T>? {
+        return Brain<T>.load(name: name)
+    }
+    
+    static func load(name: String = "ML") -> Brain<T>? {
+        return loadGeneration(key: name)
     }
     
     private static func random() -> T {

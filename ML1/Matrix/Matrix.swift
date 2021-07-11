@@ -7,7 +7,7 @@
 
 import UIKit
 
-public class Matrix<T: FloatingPoint>: NSObject {
+public class Matrix<T: FloatingPoint & Codable>: NSObject & Codable {
     private var rawValues: [[T]]!
     private var mcols: Int! // Number Of Vectors / Arrays
     private var mrows: Int! // Length Of Vector / Array
