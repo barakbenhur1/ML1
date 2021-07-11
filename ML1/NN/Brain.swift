@@ -92,14 +92,22 @@ class Brain<T: FloatingPoint & Codable>: Codable {
         self.hidden_to_output = Matrix(rows: number_of_outputs, cols: number_of_hidden, valueInitFunction: valueInitFunction)
         self.bias_hidden = Matrix(rows: number_of_hidden, cols: 1, valueInitFunction: valueInitFunction)
         self.bias_output = Matrix(rows: number_of_outputs, cols: 1, valueInitFunction: valueInitFunction)
-//        self.neuralNetwork = [Perceptron]()
+        //        self.neuralNetwork = [Perceptron]()
     }
     
     func predict(inputs: [T]) -> [T] {
         sem.wait()
         let inputsMatrix = Matrix<T>.fromArray(other: [inputs])
+        defer {
+            sem.signal()
+        }
         
-        let hidden = try? Matrix<T>.multiply(m1: input_to_hidden, m2: inputsMatrix)
+        return feedForword(inputs: inputsMatrix).output.values
+    }
+    
+    private func feedForword(inputs: Matrix<T>) -> (hidden: Matrix<T> , output: Matrix<T>) {
+        
+        let hidden = try? Matrix<T>.multiply(m1: input_to_hidden, m2: inputs)
         
         hidden!.add(other: bias_hidden)
         
@@ -111,11 +119,7 @@ class Brain<T: FloatingPoint & Codable>: Codable {
         
         output?.map(function: activeFunction)
         
-        defer {
-            sem.signal()
-        }
-        
-        return output!.values
+        return (hidden!, output!)
     }
     
     private func train(inputs: [T], targets: [T], activeFunction: @escaping (T) -> (T), deActiveFunction: @escaping (T) -> (T)) {
@@ -124,34 +128,27 @@ class Brain<T: FloatingPoint & Codable>: Codable {
         
         let inputsMatrix = Matrix<T>.fromArray(other: [inputs])
         
-        let hiddenMatrix = try? Matrix<T>.multiply(m1: input_to_hidden, m2: inputsMatrix)
+        let feedData = feedForword(inputs: inputsMatrix)
         
-        hiddenMatrix!.add(other: bias_hidden)
+        let hiddenMatrix = feedData.hidden
         
-        hiddenMatrix?.map(function: activeFunction)
-        
-        
-        let outputsMatrix = try? Matrix<T>.multiply(m1: hidden_to_output , m2: hiddenMatrix!)
-        
-        outputsMatrix?.add(other: bias_output)
-        
-        outputsMatrix?.map(function: activeFunction)
+        let outputsMatrix = feedData.output
         
         
         let targetMatrix = Matrix<T>.fromArray(other: [targets])
         
        
-        let outputsError = try? Matrix<T>.subtract(m1: targetMatrix, m2: outputsMatrix!)
+        let outputsError = try? Matrix<T>.subtract(m1: targetMatrix, m2: outputsMatrix)
     
         
-        let gradients = try? Matrix<T>.map(m: outputsMatrix!, function: deActiveFunction)
+        let gradients = try? Matrix<T>.map(m: outputsMatrix, function: deActiveFunction)
        
         gradients!.multiplyByCell(other: outputsError!)
         
         gradients!.multiply(n: learning_rate)
         
         
-        let hiddenT = try? Matrix<T>.transpose(m: hiddenMatrix!)
+        let hiddenT = try? Matrix<T>.transpose(m: hiddenMatrix)
         
         let hiddenToOutputDaltas = try? Matrix<T>.multiply(m1: gradients!, m2: hiddenT!)
         
@@ -166,7 +163,7 @@ class Brain<T: FloatingPoint & Codable>: Codable {
         let hiddenErrors = try? Matrix<T>.multiply(m1: hiddenToOutputT!, m2: outputsError!)
         
         
-        let hiddenGradients = try? Matrix<T>.map(m: hiddenMatrix!, function: deActiveFunction)
+        let hiddenGradients = try? Matrix<T>.map(m: hiddenMatrix, function: deActiveFunction)
         
         hiddenGradients?.multiplyByCell(other: hiddenErrors!)
         
@@ -397,11 +394,17 @@ class Brain<T: FloatingPoint & Codable>: Codable {
     }
     
     func save(name: String = "ML") {
+        sem.wait()
         let success = saveGeneration(key: name)
+        sem.signal()
         print(success)
     }
     
     func load(name: String = "ML") -> Brain<T>? {
+        sem.wait()
+        defer {
+            sem.signal()
+        }
         return Brain<T>.load(name: name)
     }
     
