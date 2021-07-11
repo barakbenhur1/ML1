@@ -16,6 +16,7 @@
 		3098F7082697031B002D8CEF /* Brain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3098F7072697031B002D8CEF /* Brain.swift */; };
 		3098F70A269705CD002D8CEF /* Perceptron.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3098F709269705CD002D8CEF /* Perceptron.swift */; };
 		3098F70C26970A9B002D8CEF /* Trainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3098F70B26970A9B002D8CEF /* Trainer.swift */; };
+		30BAF5AA269879C900DA1A75 /* Matrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30BAF5A9269879C900DA1A75 /* Matrix.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +31,7 @@
 		3098F7072697031B002D8CEF /* Brain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Brain.swift; sourceTree = "<group>"; };
 		3098F709269705CD002D8CEF /* Perceptron.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Perceptron.swift; sourceTree = "<group>"; };
 		3098F70B26970A9B002D8CEF /* Trainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trainer.swift; sourceTree = "<group>"; };
+		30BAF5A9269879C900DA1A75 /* Matrix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Matrix.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +64,8 @@
 		3098F6F02697020C002D8CEF /* ML1 */ = {
 			isa = PBXGroup;
 			children = (
+				30BAF5AC26988BDA00DA1A75 /* NN */,
+				30BAF5AB26988BC900DA1A75 /* Matrix */,
 				3098F6F12697020C002D8CEF /* AppDelegate.swift */,
 				3098F6F32697020C002D8CEF /* SceneDelegate.swift */,
 				3098F6F52697020C002D8CEF /* ViewController.swift */,
@@ -69,11 +73,26 @@
 				3098F6FA2697020D002D8CEF /* Assets.xcassets */,
 				3098F6FC2697020D002D8CEF /* LaunchScreen.storyboard */,
 				3098F6FF2697020D002D8CEF /* Info.plist */,
+			);
+			path = ML1;
+			sourceTree = "<group>";
+		};
+		30BAF5AB26988BC900DA1A75 /* Matrix */ = {
+			isa = PBXGroup;
+			children = (
+				30BAF5A9269879C900DA1A75 /* Matrix.swift */,
+			);
+			path = Matrix;
+			sourceTree = "<group>";
+		};
+		30BAF5AC26988BDA00DA1A75 /* NN */ = {
+			isa = PBXGroup;
+			children = (
 				3098F7072697031B002D8CEF /* Brain.swift */,
 				3098F709269705CD002D8CEF /* Perceptron.swift */,
 				3098F70B26970A9B002D8CEF /* Trainer.swift */,
 			);
-			path = ML1;
+			path = NN;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -146,6 +165,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				30BAF5AA269879C900DA1A75 /* Matrix.swift in Sources */,
 				3098F6F62697020C002D8CEF /* ViewController.swift in Sources */,
 				3098F6F22697020C002D8CEF /* AppDelegate.swift in Sources */,
 				3098F7082697031B002D8CEF /* Brain.swift in Sources */,
