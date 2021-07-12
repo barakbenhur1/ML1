@@ -21,7 +21,7 @@ class ViewController: UIViewController {
     let inputs: [[CGFloat]] = [[0, 0], [1, 0], [0, 1], [1, 1]]
     let targets: [[CGFloat]] = [[0], [1] ,[1], [0]]
     
-    var brain: Brain<CGFloat>!
+    var brain: Brain<CGFloat>?
     
     var epsilon = 0.1
     
@@ -61,7 +61,7 @@ class ViewController: UIViewController {
         startButton.setTitleColor(.gray, for: .disabled)
         startButton.setTitleColor(.black, for: .normal)
         startButton.backgroundColor = .green
-        startButton.addTarget(self, action: #selector(mlStart), for: .touchUpInside)
+        startButton.addTarget(self, action: #selector(start), for: .touchUpInside)
         
         
         saveButton = UIButton(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: view.center.y - 120), size: CGSize(width: 400, height: 180)))
@@ -80,60 +80,64 @@ class ViewController: UIViewController {
         loadButton.backgroundColor = .systemOrange
         loadButton.addTarget(self, action: #selector(load), for: .touchUpInside)
         
-        loadButton.isEnabled = false
-        
         view.addSubview(startButton)
         view.addSubview(saveButton)
         view.addSubview(loadButton)
-        
-        ml()
+    }
+    
+    @objc func start() {
+        brain?.stop()
+        brain = Brain<CGFloat>.create(number_of_input: inputs[0].count, number_of_hidden: inputs[0].count, number_of_outputs: targets[0].count)
+        ml(on: true)
+        mlStart()
     }
     
     @objc func save() {
-        brain.save(name: "b")
+        ml(on: false)
+        brain?.save(name: "b")
+        ml(on: true)
     }
     
     @objc func load() {
         //        brain = nil
+        ml(on: false)
+        brain?.stop()
         brain = Brain<CGFloat>.load(name: "b")
-        brain.stop()
         DispatchQueue(label: "work").async { [self] in
             mlStart()
         }
+        ml(on: true)
     }
     
-    func ml() {
-        brain = Brain<CGFloat>(number_of_input: 2, number_of_hidden: 2, number_of_outputs: 1, learning_rate: 0.18) {
-            return CGFloat.random(in: -1...1)
-        }
-        
+    func ml(on: Bool) {
         DispatchQueue.main.async {
-            self.saveButton.isEnabled = true
-            self.loadButton.isEnabled = true
+            self.startButton.isEnabled = on
+            self.saveButton.isEnabled = on
+            self.loadButton.isEnabled = on
         }
     }
     
-    @objc func mlStart() {
+    func mlStart() {
         DispatchQueue(label: "work").async { [self] in
-            brain.start(inputs: inputs, targets: targets, iterations: 200, numberTraningsForIteration: 400,
+            brain?.start(inputs: inputs, targets: targets, iterations: 200, numberOfTraningsForIteration: 400,
                         progressUpdate:  { iteration in
                             let iter = " ( Iteration: \(iteration) ) "
-                            
-                            brain.printDescription(inputs: inputs, targets: targets, title: iter)
+
+                            brain?.printDescription(inputs: inputs, targets: targets, title: iter)
                             print()
-                            
+
                         }, completed: {
                             print()
                             print()
                             print("Done.................")
                             print()
-                            let s = String(repeating: "=", count: "\(inputs[0]), \(brain.predict(inputs: inputs[0])), \(targets[0])".count + 16)
-                            brain.printDescription(inputs: inputs, targets: targets, title: s)
+                            let s = String(repeating: "=", count: "\(inputs[0]), \(brain!.predict(inputs: inputs[0])), \(targets[0])".count + 16)
+                            brain?.printDescription(inputs: inputs, targets: targets, title: s)
                         })
-            
+
 //            var brain2: Brain<CGFloat>!
-            //
-//            Brain<CGFloat>.start(inputs: inputs, targets: targets) { brainObj in
+//            //
+//            Brain<CGFloat>.start(inputs: inputs, targets: targets, iterations:  200, numberOfTraningsForIteration: 400) { brainObj in
 //                brain = brainObj
 //                DispatchQueue.main.async {
 //                    self.saveButton.isEnabled = true
@@ -143,7 +147,7 @@ class ViewController: UIViewController {
 //
 //                let iter = " ( Iteration: \(iteration) ) "
 //
-//                brain.printDescription(inputs: inputs, targets: targets, title: iter)
+//                brain?.printDescription(inputs: inputs, targets: targets, title: iter)
 //                print()
 //
 //            } completed: {
@@ -151,8 +155,8 @@ class ViewController: UIViewController {
 //                print()
 //                print("Done.................")
 //                print()
-//                let s = String(repeating: "=", count: "\(inputs[0]), \(brain.predict(inputs: inputs[0])), \(targets[0])".count + 16)
-//                brain.printDescription(inputs: inputs, targets: targets, title: s)
+//                let s = String(repeating: "=", count: "\(inputs[0]), \(brain!.predict(inputs: inputs[0])), \(targets[0])".count + 16)
+//                brain?.printDescription(inputs: inputs, targets: targets, title: s)
 //            }
         }
     }

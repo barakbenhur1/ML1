@@ -83,7 +83,7 @@ class Brain<T: FloatingPoint & Codable>: Codable {
         
     }
     
-    init(number_of_input: Int, number_of_hidden: Int, number_of_outputs: Int, learning_rate: T = learningRate(), valueInitFunction: @escaping () -> (T)) {
+    private init(number_of_input: Int, number_of_hidden: Int, number_of_outputs: Int, learning_rate: T = learningRate(), valueInitFunction: @escaping () -> (T)) {
         self.number_of_input = number_of_input
         self.number_of_hidden = number_of_hidden
         self.number_of_outputs = number_of_outputs
@@ -200,6 +200,26 @@ class Brain<T: FloatingPoint & Codable>: Codable {
         return Brain<T>.getInstances()![name]!
     }
     
+    static func create<T: FloatingPoint>(file: String = #file, number_of_input: Int, number_of_hidden: Int, number_of_outputs: Int, learning_rate: T? = nil, valueInitFunction: (() -> (T))? = nil) -> Brain<T> {
+        
+        guard (singalSem != nil) else { fatalError("Error Occurred") }
+        
+        let name = String(describing: file)
+        
+        singalSem?.wait()
+        if  Brain<T>.getInstances()![name] == nil {
+            let o = Brain<T>(number_of_input: number_of_input, number_of_hidden: number_of_hidden, number_of_outputs: number_of_outputs, learning_rate: learning_rate ?? Brain<T>.learningRate(), valueInitFunction: valueInitFunction ?? Brain<T>.random)
+            Brain<T>.addInstances(key: name, value: o)
+        }
+        
+        defer {
+            singalSem?.signal()
+        }
+        
+        
+        return Brain<T>.getInstances()![name]!
+    }
+    
     enum ActivationMethod {
         case sigmoid, custom(activtionmethod: (_ x: T) -> (T), deDctivtionmethod: (_ x: T) -> (T)), none
         
@@ -242,14 +262,14 @@ class Brain<T: FloatingPoint & Codable>: Codable {
         stopRun = true
     }
 
-    func start(inputs: [[T]], targets: [[T]], iterations: Int? = nil, numberTraningsForIteration: Int? = nil, file: String = #file, line: Int = #line, function: String = #function, ativtionMethod: ActivationMethod = .sigmoid, valueInitFunction: (() -> (T))? = nil, progressUpdate: ((_ iteration: Int) -> ())? = nil, completed: (() -> ())? = nil) {
+    func start(inputs: [[T]], targets: [[T]], iterations: Int? = nil, numberOfTraningsForIteration: Int? = nil, file: String = #file, line: Int = #line, function: String = #function, ativtionMethod: ActivationMethod = .sigmoid, valueInitFunction: (() -> (T))? = nil, progressUpdate: ((_ iteration: Int) -> ())? = nil, completed: (() -> ())? = nil) {
         
         stopRun = false
         stopStatic = false
         
         set_ativtion_method(ativtionMethod)
         set_learning_iterations(iterations: iterations ?? self.iterations)
-        set_learning_number_tranings_for_iteration(number: numberTraningsForIteration ?? self.randomCaycles)
+        set_learning_number_tranings_for_iteration(number: numberOfTraningsForIteration ?? self.randomCaycles)
         
         brainObj?(self)
         
@@ -267,7 +287,7 @@ class Brain<T: FloatingPoint & Codable>: Codable {
         completed?()
     }
     
-    static func start(inputs: [[T]], targets: [[T]], iterations: Int? = nil, numberTraningsForIteration: Int? = nil, file: String = #file, line: Int = #line, function: String = #function, ativtionMethod: ActivationMethod = .sigmoid, learning_rate: T? = nil, valueInitFunction: (() -> (T))? = nil, brainObj: @escaping (Brain<T>) -> (), progressUpdate: ((_ iteration: Int) -> ())? = nil, completed: (() -> ())? = nil) {
+    static func start(inputs: [[T]], targets: [[T]], iterations: Int? = nil, numberOfTraningsForIteration: Int? = nil, file: String = #file, line: Int = #line, function: String = #function, ativtionMethod: ActivationMethod = .sigmoid, learning_rate: T? = nil, valueInitFunction: (() -> (T))? = nil, brainObj: @escaping (Brain<T>) -> (), progressUpdate: ((_ iteration: Int) -> ())? = nil, completed: (() -> ())? = nil) {
         let number_of_hidden = inputs[0].count
         let brain = Brain<T>.create(file: file, number_of_input: inputs[0].count, number_of_hidden: number_of_hidden, number_of_outputs: targets[0].count, valueInitFunction: {
             return valueInitFunction != nil ? valueInitFunction!() : random()
@@ -277,7 +297,7 @@ class Brain<T: FloatingPoint & Codable>: Codable {
         
         brain.brainObj = brainObj
 
-        brain.start(inputs: inputs, targets: targets, iterations: iterations, numberTraningsForIteration: numberTraningsForIteration, ativtionMethod: ativtionMethod, valueInitFunction: valueInitFunction, progressUpdate: progressUpdate, completed: completed)
+        brain.start(inputs: inputs, targets: targets, iterations: iterations, numberOfTraningsForIteration: numberOfTraningsForIteration, ativtionMethod: ativtionMethod, valueInitFunction: valueInitFunction, progressUpdate: progressUpdate, completed: completed)
     }
     
     func set_learning_iterations(iterations: Int) {
