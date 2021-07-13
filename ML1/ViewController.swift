@@ -7,6 +7,13 @@
 
 import UIKit
 
+public struct PixelData {
+    var a: UInt8
+    var r: UInt8
+    var g: UInt8
+    var b: UInt8
+}
+
 class ViewController: UIViewController {
     
     var startButton : UIButton!
@@ -16,10 +23,23 @@ class ViewController: UIViewController {
     var a: CGFloat!
     var b: CGFloat!
     
-    let p = Perceptron(lerningRate: 0.2, numOfweights: 2)
+    var inputs: [[CGFloat]] = [[0, 0], [1, 0], [0, 1], [1, 1]]
+    var targets: [[CGFloat]] = [[0], [1] ,[1], [0]]
     
-    let inputs: [[CGFloat]] = [[0, 0], [1, 0], [0, 1], [1, 1]]
-    let targets: [[CGFloat]] = [[0], [1] ,[1], [0]]
+    var inputsTest: [[CGFloat]] = [[0, 0], [1, 0], [0, 1], [1, 1]]
+    var targetsTest: [[CGFloat]] = [[0], [1] ,[1], [0]]
+    
+    var label = #file
+    
+    var number_of_input = 0
+    
+    var number_of_hidden = 0
+    
+    var number_of_outputs = 0
+    
+    var numberOfTraningsForIteration = 0
+    
+    var iterations = 0
     
     var brain: Brain<CGFloat>?
     
@@ -44,13 +64,57 @@ class ViewController: UIViewController {
         imageView.image = UIGraphicsGetImageFromCurrentImageContext()
         imageView.alpha = 1
         UIGraphicsEndImageContext()
-        
-        //        imageView.setNeedsDisplay()
     }
     
-    @objc private func getValue(text: String) {
-        guard let n = NumberFormatter().number(from: text) else { return }
-        print("F( \(text) ) = y: \(lineAnswer(a: a, x: CGFloat(truncating: n), b: b)), y guess: \(p.getY(for: CGFloat(truncating: n)) + Double(b))")
+    func getFile(forResource resource: String, withExtension fileExt: String?) -> [UInt8]? {
+        // See if the file exists.
+        guard let fileUrl: URL = Bundle.main.url(forResource: resource, withExtension: fileExt) else {
+            return nil
+        }
+
+        do {
+            // Get the raw data from the file.
+            let rawData: Data = try Data(contentsOf: fileUrl)
+
+            // Return the raw data as an array of bytes.
+            return [UInt8](rawData)
+        } catch {
+            // Couldn't read the file.
+            return nil
+        }
+    }
+    
+    func byteArrayToCGImage(raw: UnsafeMutablePointer<UInt8>, w: Int, h: Int) -> CGImage! {
+
+        // 4 bytes(rgba channels) for each pixel
+        let bytesPerPixel: Int = 4
+        // (8 bits per each channel)
+        let bitsPerComponent: Int = 8
+
+        let bitsPerPixel = bytesPerPixel * bitsPerComponent;
+        // channels in each row (width)
+        let bytesPerRow: Int = w * bytesPerPixel;
+
+        let cfData = CFDataCreate(nil, raw, w * h * bytesPerPixel)
+        let cgDataProvider = CGDataProvider.init(data: cfData!)!
+
+        let deviceColorSpace = CGColorSpaceCreateDeviceRGB()
+
+        let image: CGImage! = CGImage.init(width: w,
+                                           height: h,
+                                           bitsPerComponent: bitsPerComponent,
+                                           bitsPerPixel: bitsPerPixel,
+                                           bytesPerRow: bytesPerRow,
+                                           space: deviceColorSpace,
+                                           bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.last.rawValue),
+                                           provider: cgDataProvider,
+                                           decode: nil,
+                                           shouldInterpolate: true,
+                                           intent: CGColorRenderingIntent.defaultIntent)
+        
+        
+        
+        return image;
     }
     
     override func viewDidLoad() {
@@ -83,29 +147,128 @@ class ViewController: UIViewController {
         view.addSubview(startButton)
         view.addSubview(saveButton)
         view.addSubview(loadButton)
+        
+        prepareData()
+    }
+    
+    func prepareData() {
+        
+        /// 1  ================================================
+        
+        let catbyteArr = getFile(forResource: "cat", withExtension: "bin")
+        
+        let rainbowbyteArr = getFile(forResource: "cat", withExtension: "bin")
+        
+        let trainbyteArr = getFile(forResource: "cat", withExtension: "bin")
+        
+        /// 2 ================================================
+        
+        let dataArr = [catbyteArr, rainbowbyteArr, trainbyteArr]
+        
+        var traningObj = [[CGFloat]]()
+        
+        var targetTarningObj = [[CGFloat]]()
+        
+        var testingObj = [[CGFloat]]()
+        
+        var testingTarningObj = [[CGFloat]]()
+        
+        let total = 100
+        
+        /// 3 ================================================
+        
+        for i in 0..<3 {
+            
+            var targesArr = [CGFloat]([0, 0, 0])
+            
+            targesArr[i] = 1
+            
+            for n in 0..<total {
+                
+                let offset = n * 784
+                
+                let imageArr = [UInt8](dataArr[i]![offset..<offset+784]).map { (255 - $0) }
+                
+                let imageNormalArr: [CGFloat] = imageArr.map { CGFloat($0) / 255 }
+                
+                
+                
+                if CGFloat(n) < CGFloat(total) * 0.8 {
+                    targetTarningObj.append(targesArr)
+                    traningObj.append(imageNormalArr)
+                }
+                else {
+                    testingTarningObj.append(targesArr)
+                    testingObj.append(imageNormalArr)
+                }
+            }
+        }
+        
+        
+        /// 4  ================================================
+        
+        label = "ML1"
+        
+        inputs = traningObj
+        
+        targets = targetTarningObj
+        
+        number_of_input = inputs[0].count
+        
+        number_of_hidden = 200
+        
+        number_of_outputs = targets[0].count
+        
+        iterations = 20
+        
+        numberOfTraningsForIteration = inputs[0].count
+        
+        inputsTest = testingObj
+        
+        targetsTest = testingTarningObj
     }
     
     @objc func start() {
         brain?.stop()
-        brain = Brain<CGFloat>.create(number_of_input: inputs[0].count, number_of_hidden: inputs[0].count, number_of_outputs: targets[0].count)
+        
+        brain = Brain<CGFloat>.create(label: label ,number_of_input: number_of_input, number_of_hidden: number_of_hidden, number_of_outputs: number_of_outputs)
+        
+        print(true)
+        
         ml(on: true)
-        mlStart()
+        
+        DispatchQueue(label: "work").async { [self] in
+            mlStart()
+        }
     }
     
     @objc func save() {
         ml(on: false)
-        brain?.save(name: "b")
+        
+        let success = brain?.save(name: label)
+        
+        print(success!)
+        
         ml(on: true)
     }
     
     @objc func load() {
-        //        brain = nil
         ml(on: false)
+        
         brain?.stop()
-        brain = Brain<CGFloat>.load(name: "b")
+        
         DispatchQueue(label: "work").async { [self] in
+            
+            guard let brainObj = brain?.load(name: label) else {
+                print(false)
+                return
+            }
+            
+            brain = brainObj
+            print(true)
             mlStart()
         }
+        
         ml(on: true)
     }
     
@@ -118,67 +281,61 @@ class ViewController: UIViewController {
     }
     
     func mlStart() {
+        
         DispatchQueue(label: "work").async { [self] in
-            brain?.start(inputs: inputs, targets: targets, iterations: 200, numberOfTraningsForIteration: 400,
-                        progressUpdate:  { iteration in
+            
+            brain?.start(inputs: inputs, targets: targets, iterations: iterations, numberOfTraningsForIteration: numberOfTraningsForIteration,
+                         progressUpdate:  { iteration in
                             let iter = " ( Iteration: \(iteration) ) "
-
+                            
                             brain?.printDescription(inputs: inputs, targets: targets, title: iter)
                             print()
-
-                        }, completed: {
+                            
+                         }, completed: {
                             print()
                             print()
-                            print("Done.................")
-                            print()
-                            let s = String(repeating: "=", count: "\(inputs[0]), \(brain!.predict(inputs: inputs[0])), \(targets[0])".count + 16)
-                            brain?.printDescription(inputs: inputs, targets: targets, title: s)
-                        })
-
-//            var brain2: Brain<CGFloat>!
-//            //
-//            Brain<CGFloat>.start(inputs: inputs, targets: targets, iterations:  200, numberOfTraningsForIteration: 400) { brainObj in
-//                brain = brainObj
-//                DispatchQueue.main.async {
-//                    self.saveButton.isEnabled = true
-//                    self.loadButton.isEnabled = true
-//                }
-//            } progressUpdate: { iteration in
-//
-//                let iter = " ( Iteration: \(iteration) ) "
-//
-//                brain?.printDescription(inputs: inputs, targets: targets, title: iter)
-//                print()
-//
-//            } completed: {
-//                print()
-//                print()
-//                print("Done.................")
-//                print()
-//                let s = String(repeating: "=", count: "\(inputs[0]), \(brain!.predict(inputs: inputs[0])), \(targets[0])".count + 16)
-//                brain?.printDescription(inputs: inputs, targets: targets, title: s)
-//            }
+                            let s = " .... Done .... "
+                            brain?.printDescription(inputs: inputsTest, targets: targetsTest, title: s)
+                            print(s)
+                         })
         }
     }
-    
-    func line(a: CGFloat, x: CGFloat, b: CGFloat) -> Int {
-        let formula = a * x + b
-        return formula >= 0  ? 1 : -1
-    }
-    
-    func lineAnswer(a: CGFloat, x: CGFloat, b: CGFloat) -> Double {
-        let formula = a * x + b
-        return Double(formula)
+}
+
+extension UIImage {
+    convenience init?(pixels: [PixelData], width: Int, height: Int) {
+        guard width > 0 && height > 0, pixels.count == width * height else { return nil }
+        var data = pixels
+        guard let providerRef = CGDataProvider(data: Data(bytes: &data, count: data.count * MemoryLayout<PixelData>.size) as CFData)
+            else { return nil }
+        guard let cgim = CGImage(
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bitsPerPixel: 32,
+            bytesPerRow: width * MemoryLayout<PixelData>.size,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue),
+            provider: providerRef,
+            decode: nil,
+            shouldInterpolate: true,
+            intent: .defaultIntent)
+        else { return nil }
+        self.init(cgImage: cgim)
     }
 }
 
-extension ViewController : UITextFieldDelegate {
-    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-        
-        guard string != "" else { return true }
-        getValue(text: textField.text! + string)
-        
-        return true
+extension CGFloat {
+    func print() {
+        switch self {
+        case 0:
+            Swift.print("Cat")
+        case 1:
+            Swift.print("Rainbow")
+        case 2:
+            Swift.print("Train")
+        default:
+            Swift.print("Dont Know")
+        }
     }
 }
-

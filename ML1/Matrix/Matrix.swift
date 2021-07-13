@@ -7,11 +7,29 @@
 
 import UIKit
 
-public class Matrix<T: FloatingPoint & Codable>: NSObject & Codable {
+public class Matrix<T: Numeric & Codable>: Codable {
     private var rawValues: [[T]]!
     private var mcols: Int! // Number Of Vectors / Arrays
     private var mrows: Int! // Length Of Vector / Array
     
+    enum CodingKeys: String, CodingKey {
+        case rows, cols, rawValues, valueInitFunction
+    }
+    
+    public required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        mrows = try container.decode(Int.self, forKey: .rows)
+        mcols = try container.decode(Int.self, forKey: .cols)
+        rawValues = try container.decode([[T]].self, forKey: .rawValues)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(mrows, forKey: .rows)
+        try container.encode(mcols, forKey: .cols)
+        try container.encode(rawValues, forKey: .rawValues)
+    }
+
     var rows: Int {
         get {
             return mrows
@@ -34,27 +52,39 @@ public class Matrix<T: FloatingPoint & Codable>: NSObject & Codable {
         }
     }
     
-    public override var description: String {
-        return "rows: \(mrows ?? 0), cols: \(mcols ?? 0)\nraw values:\n\(rawValues ?? [])"
+    private lazy var description = {
+        return String(UInt(bitPattern: ObjectIdentifier(self)))
+    }()
+    
+    public func hash(into hasher: inout Hasher) {
+        self.hash(into: &hasher)
+        "\(self)".hash(into: &hasher)
     }
     
-    init(rows: Int, cols: Int, valueInitFunction: (() -> (T))? = nil) {
+    private var valueInitFunction: (() -> (T))!
+    
+    init(rows: Int, cols: Int, valueInitFunction: @escaping (() -> (T)) = { return .zero } ) {
         self.mrows = rows
         self.mcols = cols
-        rawValues = [[T]]()
+        self.valueInitFunction = valueInitFunction
+        self.rawValues = [[T]]()
         
-        for i in 0..<rows {
-            rawValues.append([])
-            for _ in 0..<cols {
-                rawValues[i].append((valueInitFunction != nil ? valueInitFunction!() : .zero))
-            }
-        }
+        self.initRawData()
     }
     
     init(other: Matrix) {
         self.mrows = other.mrows
         self.mcols = other.mcols
         self.rawValues = [[T]](other.rawValues)
+    }
+    
+    func initRawData() {
+        for i in 0..<rows {
+            rawValues.append([])
+            for _ in 0..<cols {
+                rawValues[i].append((valueInitFunction != nil ? valueInitFunction!() : .zero))
+            }
+        }
     }
     
     static func fromArray(other: [[T]]) -> Matrix<T> {
