@@ -268,6 +268,7 @@ class Brain<T: Numeric & Codable>: Codable {
         stopRun = false
         stopStatic = false
         
+        setTraindIndex(traindIndex: traindIndex)
         set_ativtion_method(ativtionMethod)
         set_learning_iterations(iterations: iterations ?? self.iterations)
         set_learning_number_tranings_for_iteration(number: numberOfTraningsForIteration ?? self.randomCaycles)
@@ -282,7 +283,7 @@ class Brain<T: Numeric & Codable>: Codable {
                 let index = Int.random(in: 0..<inputs.count)
                 train(inputs: inputs[index], targets: targets[index] ,activeFunction: activeFunction, deActiveFunction: deActiveFunction)
                 j += 1
-                traindIndex?(targets[index], j)
+                traindIndex?(targets[index], index)
             }
             
             progressUpdate?(i)
@@ -290,6 +291,8 @@ class Brain<T: Numeric & Codable>: Codable {
         
         completed?()
     }
+    
+    private var traindIndex: (([T], Int) -> ())?
     
     static func start(inputs: [[T]], targets: [[T]], iterations: Int? = nil, numberOfTraningsForIteration: Int? = nil, file: String = #file, line: Int = #line, function: String = #function, ativtionMethod: ActivationMethod = .sigmoid, learning_rate: T? = nil, valueInitFunction: (() -> (T))? = nil, brainObj: @escaping (Brain<T>) -> (), traindIndex: (([T], Int) -> ())? = nil, progressUpdate: ((_ iteration: Int) -> ())? = nil, completed: (() -> ())? = nil) {
         let number_of_hidden = inputs[0].count
@@ -302,21 +305,30 @@ class Brain<T: Numeric & Codable>: Codable {
         brain.start(inputs: inputs, targets: targets, iterations: iterations, numberOfTraningsForIteration: numberOfTraningsForIteration, ativtionMethod: ativtionMethod, valueInitFunction: valueInitFunction, traindIndex: traindIndex, progressUpdate: progressUpdate, completed: completed)
     }
     
-    func set_learning_iterations(iterations: Int) {
+    func setTraindIndex(traindIndex: (([T], Int) -> ())?, complete: (() -> ())? = nil) {
+        self.traindIndex = traindIndex
+        complete?()
+    }
+    
+    func set_learning_iterations(iterations: Int, complete: (() -> ())? = nil) {
         self.iterations = iterations
+        complete?()
     }
     
-    func set_learning_number_tranings_for_iteration(number: Int) {
+    func set_learning_number_tranings_for_iteration(number: Int, complete: (() -> ())? = nil) {
         self.randomCaycles = number
+        complete?()
     }
     
-    func set_learning_rate(learning_rate: T) {
+    func set_learning_rate(learning_rate: T, complete: (() -> ())? = nil) {
         self.learning_rate = learning_rate
+        complete?()
     }
     
-    func set_ativtion_method(_ activationMethod: ActivationMethod) {
+    func set_ativtion_method(_ activationMethod: ActivationMethod, complete: (() -> ())? = nil) {
         self.activeFunction = activationMethod.getActivtionMethod()
         self.deActiveFunction = activationMethod.getDeActivtionMethod()
+        complete?()
     }
     
     func printDescription(inputs:[[T]], targets: [[T]], title: String) {
@@ -425,8 +437,7 @@ class Brain<T: Numeric & Codable>: Codable {
             }
             
             let method: ActivationMethod = .sigmoid
-            ml.activeFunction = method.getActivtionMethod()
-            ml.activeFunction = method.getDeActivtionMethod()
+            ml.set_ativtion_method(method)
             
             return ml
         }
@@ -461,9 +472,9 @@ class Brain<T: Numeric & Codable>: Codable {
         
         singalSem?.wait()
         
-        if let instance = Brain<T>.getInstances()![brain.label] {
-            return instance
-        }
+//        if let instance = Brain<T>.getInstances()![brain.label] {
+//            return instance
+//        }
         
         Brain<T>.addInstances(key: brain.label, value: brain)
         

@@ -77,11 +77,11 @@ class ViewController: UIViewController {
         guard let fileUrl: URL = Bundle.main.url(forResource: resource, withExtension: fileExt) else {
             return nil
         }
-
+        
         do {
             // Get the raw data from the file.
             let rawData: Data = try Data(contentsOf: fileUrl)
-
+            
             // Return the raw data as an array of bytes.
             return [UInt8](rawData)
         } catch {
@@ -91,28 +91,28 @@ class ViewController: UIViewController {
     }
     
     func byteArrayToCGImage(raw: UnsafeMutablePointer<UInt8>, w: Int, h: Int) -> CGImage! {
-
+        
         // 4 bytes(rgba channels) for each pixel
-        let bytesPerPixel: Int = 4
+        let bytesPerPixel: Int = 1
         // (8 bits per each channel)
         let bitsPerComponent: Int = 8
-
+        
         let bitsPerPixel = bytesPerPixel * bitsPerComponent;
         // channels in each row (width)
         let bytesPerRow: Int = w * bytesPerPixel;
-
+        
         let cfData = CFDataCreate(nil, raw, w * h * bytesPerPixel)
         let cgDataProvider = CGDataProvider.init(data: cfData!)!
-
-        let deviceColorSpace = CGColorSpaceCreateDeviceRGB()
-
+        
+        let deviceColorSpace = CGColorSpaceCreateDeviceGray()
+        
         let image: CGImage! = CGImage.init(width: w,
                                            height: h,
                                            bitsPerComponent: bitsPerComponent,
                                            bitsPerPixel: bitsPerPixel,
                                            bytesPerRow: bytesPerRow,
                                            space: deviceColorSpace,
-                                           bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.last.rawValue),
+                                           bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue),
                                            provider: cgDataProvider,
                                            decode: nil,
                                            shouldInterpolate: true,
@@ -121,6 +121,71 @@ class ViewController: UIViewController {
         
         
         return image;
+    }
+    
+    func parseCSV (contentsOfURL: NSURL, encoding: String.Encoding, error: NSErrorPointer) -> [[UInt8]]? {
+        // Load the CSV file and parse it
+        let delimiter = ","
+        var stations:[[UInt8]]?
+        
+        if let data = NSData(contentsOf: contentsOfURL as URL) {
+            if let content = NSString(data: data as Data, encoding: String.Encoding.utf8.rawValue) {
+                //existing code
+                stations = [[UInt8]]()
+                var lines:[String] = (content.components(separatedBy: NSCharacterSet.newlines)) as [String]
+                
+                lines.remove(at: 0)
+                
+                for line in lines {
+                    var values:[String] = []
+                    if line != "" {
+                        // For a line with double quotes
+                        // we use NSScanner to perform the parsing
+                        if line.range(of: "\"") != nil {
+                            var textToScan:String = line
+                            var value:NSString?
+                            var textScanner:Scanner = Scanner(string: textToScan)
+                            while textScanner.string != "" {
+                                
+                                if (textScanner.string as NSString).substring(to: 1) == "\"" {
+                                    textScanner.scanLocation += 1
+                                    textScanner.scanUpTo("\"", into: &value)
+                                    textScanner.scanLocation += 1
+                                } else {
+                                    textScanner.scanUpTo(delimiter, into: &value)
+                                }
+                                
+                                // Store the value into the values array
+                                values.append(value! as String)
+                                
+                                // Retrieve the unscanned remainder of the string
+                                if textScanner.scanLocation < textScanner.string.count {
+                                    textToScan = (textScanner.string as NSString).substring(from: textScanner.scanLocation + 1)
+                                } else {
+                                    textToScan = ""
+                                }
+                                textScanner = Scanner(string: textToScan)
+                            }
+                            
+                            // For a line without double quotes, we can simply separate the string
+                            // by using the delimiter (e.g. comma)
+                        } else  {
+                            values = line.components(separatedBy: delimiter)
+                        }
+                        
+//                        for value in values {
+                        // Put the values into the tuple and add it to the items array
+                        for _ in 0..<12 {
+                            values.remove(at: 0)
+                        }
+                        stations?.append(values.map{ UInt8($0)! })
+                        //                        }
+                    }
+                }
+            }
+        }
+        
+        return stations!
     }
     
     override func viewDidLoad() {
@@ -164,15 +229,23 @@ class ViewController: UIViewController {
         
         /// 1  ================================================
         
-        let catbyteArr = getFile(forResource: "cat", withExtension: "bin")
+        let a = parseCSV(contentsOfURL: NSURL(fileURLWithPath: "/Users/barak ben hur/Desktop/Projects/ML1/ML1/Data/fonts/BERNARD.csv"), encoding: .utf8, error: nil)
         
-        let rainbowbyteArr = getFile(forResource: "rainbow", withExtension: "bin")
+        let b = parseCSV(contentsOfURL: NSURL(fileURLWithPath: "/Users/barak ben hur/Desktop/Projects/ML1/ML1/Data/fonts/AGENCY.csv"), encoding: .utf8, error: nil)
+
+        let c = parseCSV(contentsOfURL: NSURL(fileURLWithPath: "/Users/barak ben hur/Desktop/Projects/ML1/ML1/Data/fonts/CONSTANTIA.csv"), encoding: .utf8, error: nil)
         
-        let trainbyteArr = getFile(forResource: "train", withExtension: "bin")
+//        let l = getFile(forResource: "letter-recognition", withExtension: "data")
+//
+//        let catbyteArr = getFile(forResource: "cat", withExtension: "bin")
+//
+//        let rainbowbyteArr = getFile(forResource: "rainbow", withExtension: "bin")
+//
+//        let trainbyteArr = getFile(forResource: "train", withExtension: "bin")
         
         /// 2 ================================================
         
-        dataArr = [catbyteArr!, rainbowbyteArr!, trainbyteArr!]
+//        dataArr = [catbyteArr!, rainbowbyteArr!, trainbyteArr!]
         
         var traningObj = [[CGFloat]]()
         
@@ -184,7 +257,11 @@ class ViewController: UIViewController {
         
         /// 3 ================================================
         
-        let imageSize: Int = 784
+//        var imageSize: Int = 16
+        
+//        var itemSize = 769
+        
+        dataArr = [a, b, c] as! [[[UInt8]]]
         
         let pixelNormal: UInt8 = 255
         
@@ -196,21 +273,25 @@ class ViewController: UIViewController {
         
         let start: Int = 0
         
-        let total: Int = 400
+        var total: Int = 200
         
-        guard let dataArr = dataArr as? [[UInt8]] else { return }
+        guard let dataArr = dataArr as? [[[UInt8]]] else { return }
         
         for i in start..<dataArr.count {
+            
+            //            imageSize = dataArr[i].count
             
             var targesArr = [CGFloat](repeating: initValue, count: dataArr.count)
             
             targesArr[i] = assingedValue
             
+            total = dataArr[i].count
+            
             for n in start..<total {
                 
-                let offset = n * imageSize
+                //                let offset = n * imageSize
                 
-                let imageArr = [UInt8](dataArr[i][offset..<offset+imageSize]).map { (pixelNormal - $0) }
+                let imageArr = [UInt8](dataArr[i][n]).map { 255 - $0 }
                 
                 let imageNormalArr: [CGFloat] = imageArr.map { CGFloat($0) / CGFloat(pixelNormal) }
                 
@@ -261,10 +342,10 @@ class ViewController: UIViewController {
         
         ui = true
         
-        let title = UILabel(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: 34), size: CGSize(width: 400, height: 50)))
+        let title = UILabel(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: 38), size: CGSize(width: 400, height: 46)))
         title.numberOfLines = 0
         title.textAlignment = .center
-        title.font = UIFont(name: "TimesNewRomanPSMT", size: 22)
+        title.font = UIFont(name: "AvenirNext", size: 18)
         
         let imageWrraperView = UIView(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: 84), size: CGSize(width: 400, height: 400)))
         
@@ -273,11 +354,13 @@ class ViewController: UIViewController {
         imageWrraperView.layer.borderColor = UIColor.black.cgColor
         
         let imageView = UIImageView(frame: imageWrraperView.bounds)
+        imageView.contentMode = .center
+        imageView.contentScaleFactor = 20
         imageView.clipsToBounds = true
         imageView.layer.cornerRadius = 10
         
         imageWrraperView.addSubview(imageView)
-    
+        
         
         startButton.alpha = 0.5
         saveButton.alpha = 0.5
@@ -301,24 +384,39 @@ class ViewController: UIViewController {
         var start = true
         
         updateImage = { [self] label, index in
-            DispatchQueue.main.async {
-                
-                let nextImage = {
+            
+            let nextImage = {
+                DispatchQueue.main.async {
                     imageView.alpha = 0.2
                     imageView.transform = .init(scaleX: 0.01, y: 0.001)
                     UIView.animate(withDuration: 0.3) {
                         var arr = inputs[index].map { UInt8($0 * 255) }
-                        let image = byteArrayToCGImage(raw: &arr, w: 28, h: 28)
+                        let size = sqrt(Double(inputs[index].count))
+                        let image = byteArrayToCGImage(raw: &arr, w: Int(size), h: Int(size))
                         let predict = brain?.predict(inputs: inputs[index])
                         let max = predict!.max()
                         let mlIndex = predict?.firstIndex(of: max!)
-                        title.text = "Image Is: " + label.stringValue() + "\n" + "NN Predict: \(mlIndex!.stringValue())"
+                        let real = "Font Is: "
+                        let guass = "NN Predict: "
+                        let text = "\(real)\(label.stringValue())" + "\n" + "\(guass)\(mlIndex!.stringValue())"
+                        let attr = NSMutableAttributedString(string: text)
+                        
+                        let startRange = (text as NSString).range(of: real)
+                        let endRange = (text as NSString).range(of: guass)
+                        
+                        attr.addAttributes([.foregroundColor : UIColor.systemOrange], range: NSRange(location: startRange.location + startRange.length, length: label.stringValue().count))
+                        
+                        attr.addAttributes([.foregroundColor : label == mlIndex ? UIColor.systemGreen : UIColor.systemRed], range: NSRange(location: endRange.location + endRange.length, length: (mlIndex?.stringValue().count)!))
+                        
+                        title.attributedText = attr
                         imageView.image = UIImage(cgImage: image!)
                         imageView.alpha = 1
                         imageView.transform = .identity
                     }
                 }
-                
+            }
+            
+            DispatchQueue.main.async {
                 if start {
                     start = false
                     nextImage()
@@ -380,9 +478,20 @@ class ViewController: UIViewController {
                 return
             }
             
+            DispatchQueue.main.async {
+                uiFunc()
+            }
+            
             brain = brainObj
-            print(true)
-            mlStart()
+            
+            brain?.setTraindIndex(traindIndex: { target, index in
+                updateImage(target.firstIndex(where: { num in
+                    return num == 1
+                })!, index)
+            }, complete: {
+                print(true)
+                mlStart()
+            })
         }
         
         ml(on: true)
@@ -484,11 +593,11 @@ extension Int {
     func stringValue() -> String {
         switch self {
         case 0:
-            return "Cat"
+            return "BERNARD"
         case 1:
-            return "Rainbow"
+            return "AGENCY"
             case 2:
-                return "Train"
+                return "CONSTANTIA"
         default:
             return "Dont Know"
         }
