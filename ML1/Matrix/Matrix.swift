@@ -87,7 +87,7 @@ public class Matrix<T: Numeric & Codable>: Codable {
         }
     }
     
-    static func fromArray(other: [[T]]) -> Matrix<T> {
+    static func fromMatrixArray(other: [[T]]) -> Matrix<T> {
         guard other.count > 0 else { fatalError("Matrix Must Have At Laest 1 Row") }
         let m = Matrix<T>(rows: other[0].count, cols: other.count)
         

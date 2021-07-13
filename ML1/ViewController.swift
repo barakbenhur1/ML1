@@ -41,6 +41,8 @@ class ViewController: UIViewController {
     
     var iterations = 0
     
+    var dataArr: [Any]?
+    
     var brain: Brain<CGFloat>?
     
     var epsilon = 0.1
@@ -120,7 +122,10 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        startButton = UIButton(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: view.center.y - 320), size: CGSize(width: 400, height: 180)))
+        let buttonH = 120
+        let buttonW = 400
+        
+        startButton = UIButton(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: view.center.y - 280), size: CGSize(width: buttonW, height: buttonH)))
         startButton.setTitle("Start", for: .normal)
         startButton.setTitleColor(.gray, for: .disabled)
         startButton.setTitleColor(.black, for: .normal)
@@ -128,7 +133,7 @@ class ViewController: UIViewController {
         startButton.addTarget(self, action: #selector(start), for: .touchUpInside)
         
         
-        saveButton = UIButton(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: view.center.y - 120), size: CGSize(width: 400, height: 180)))
+        saveButton = UIButton(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: view.center.y - 80), size: CGSize(width: buttonW, height: buttonH)))
         saveButton.setTitle("Save", for: .normal)
         saveButton.backgroundColor = .systemTeal
         saveButton.addTarget(self, action: #selector(save), for: .touchUpInside)
@@ -137,7 +142,7 @@ class ViewController: UIViewController {
         
         saveButton.isEnabled = false
         
-        loadButton = UIButton(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: view.center.y + 80), size: CGSize(width: 400, height: 180)))
+        loadButton = UIButton(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: view.center.y + 120), size: CGSize(width: buttonW, height: buttonH)))
         loadButton.setTitle("Load", for: .normal)
         loadButton.setTitleColor(.gray, for: .disabled)
         loadButton.setTitleColor(.black, for: .normal)
@@ -157,13 +162,13 @@ class ViewController: UIViewController {
         
         let catbyteArr = getFile(forResource: "cat", withExtension: "bin")
         
-        let rainbowbyteArr = getFile(forResource: "cat", withExtension: "bin")
+        let rainbowbyteArr = getFile(forResource: "rainbow", withExtension: "bin")
         
-        let trainbyteArr = getFile(forResource: "cat", withExtension: "bin")
+        let trainbyteArr = getFile(forResource: "train", withExtension: "bin")
         
         /// 2 ================================================
         
-        let dataArr = [catbyteArr, rainbowbyteArr, trainbyteArr]
+        dataArr = [catbyteArr!, rainbowbyteArr!, trainbyteArr!]
         
         var traningObj = [[CGFloat]]()
         
@@ -173,27 +178,39 @@ class ViewController: UIViewController {
         
         var testingTarningObj = [[CGFloat]]()
         
-        let total = 100
-        
         /// 3 ================================================
         
-        for i in 0..<3 {
+        let imageSize: Int = 784
+        
+        let pixelNormal: UInt8 = 255
+        
+        let traningDataRatio: CGFloat = 0.8
+        
+        let initValue: CGFloat = 0
+        
+        let assingedValue: CGFloat = 1
+        
+        let start: Int = 0
+        
+        let total: Int = 400
+        
+        guard let dataArr = dataArr as? [[UInt8]] else { return }
+        
+        for i in start..<dataArr.count {
             
-            var targesArr = [CGFloat]([0, 0, 0])
+            var targesArr = [CGFloat](repeating: initValue, count: dataArr.count)
             
-            targesArr[i] = 1
+            targesArr[i] = assingedValue
             
-            for n in 0..<total {
+            for n in start..<total {
                 
-                let offset = n * 784
+                let offset = n * imageSize
                 
-                let imageArr = [UInt8](dataArr[i]![offset..<offset+784]).map { (255 - $0) }
+                let imageArr = [UInt8](dataArr[i][offset..<offset+imageSize]).map { (pixelNormal - $0) }
                 
-                let imageNormalArr: [CGFloat] = imageArr.map { CGFloat($0) / 255 }
+                let imageNormalArr: [CGFloat] = imageArr.map { CGFloat($0) / CGFloat(pixelNormal) }
                 
-                
-                
-                if CGFloat(n) < CGFloat(total) * 0.8 {
+                if CGFloat(n) < CGFloat(total) * traningDataRatio {
                     targetTarningObj.append(targesArr)
                     traningObj.append(imageNormalArr)
                 }
@@ -207,29 +224,117 @@ class ViewController: UIViewController {
         
         /// 4  ================================================
         
+        let indexForLength = 0
+        
         label = "ML1"
         
         inputs = traningObj
         
         targets = targetTarningObj
         
-        number_of_input = inputs[0].count
+        number_of_input = inputs[indexForLength].count
         
-        number_of_hidden = 200
+        number_of_hidden = 64
         
-        number_of_outputs = targets[0].count
+        number_of_outputs = targets[indexForLength].count
         
         iterations = 20
         
-        numberOfTraningsForIteration = inputs[0].count
+        numberOfTraningsForIteration = inputs[indexForLength].count
         
         inputsTest = testingObj
         
         targetsTest = testingTarningObj
     }
     
+    var updateImage: ((_ label: Int, _ index: Int) -> ())!
+    
+    func uiFunc() {
+        
+        let title = UILabel(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: 34), size: CGSize(width: 400, height: 50)))
+        title.numberOfLines = 0
+        title.textAlignment = .center
+        title.font = UIFont(name: "TimesNewRomanPSMT", size: 22)
+        
+        let imageWrraperView = UIView(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: 84), size: CGSize(width: 400, height: 400)))
+        
+        imageWrraperView.layer.cornerRadius = 10
+        imageWrraperView.layer.borderWidth = 0.8
+        imageWrraperView.layer.borderColor = UIColor.black.cgColor
+        
+        let imageView = UIImageView(frame: imageWrraperView.bounds)
+        imageView.clipsToBounds = true
+        imageView.layer.cornerRadius = 10
+        
+        imageWrraperView.addSubview(imageView)
+    
+        
+        startButton.alpha = 0.5
+        saveButton.alpha = 0.5
+        loadButton.alpha = 0.5
+        
+        UIView.animate(withDuration: 0.4) { [self] in
+            startButton.frame = CGRect(origin: CGPoint(x: saveButton.frame.origin.x, y: view.center.y + 35), size: saveButton.frame.size)
+            saveButton.frame = CGRect(origin: CGPoint(x: saveButton.frame.origin.x, y: view.center.y + 157), size: saveButton.frame.size)
+            loadButton.frame = CGRect(origin: CGPoint(x: loadButton.frame.origin.x, y: view.center.y + 280), size: loadButton.frame.size)
+            
+            startButton.alpha = 1
+            saveButton.alpha = 1
+            loadButton.alpha = 1
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            self.view.addSubview(title)
+            self.view.addSubview(imageWrraperView)
+        }
+        
+        var queue = [() -> ()]()
+        
+        var start = true
+        
+        let timer = Timer(timeInterval: 1.2, repeats: true) { timer in
+            guard queue.count > 0 else { return }
+            queue.remove(at: 0)()
+        }
+        
+        updateImage = { [self] label, index in
+            DispatchQueue.main.async {
+                
+                let nextImage = {
+                    imageView.alpha = 0.2
+                    imageView.transform = .init(scaleX: 0.01, y: 0.001)
+                    UIView.animate(withDuration: 0.3) {
+                        var arr = inputs[index].map { UInt8($0 * 255) }
+                        let image = byteArrayToCGImage(raw: &arr, w: 28, h: 28)
+                        let predict = brain?.predict(inputs: inputs[index])
+                        let max = predict!.max()
+                        let mlIndex = predict?.firstIndex(of: max!)
+                        title.text = "Image Is: " + label.stringValue() + "\n" + "NN Predict: \(mlIndex!.stringValue())"
+                        imageView.image = UIImage(cgImage: image!)
+                        imageView.alpha = 1
+                        imageView.transform = .identity
+                    }
+                }
+                
+                if start {
+                    start = false
+                    nextImage()
+                }
+                else {
+                    queue.append {
+                        nextImage()
+                    }
+                }
+            }
+        }
+        
+        RunLoop.current.add(timer, forMode: .common)
+    }
+    
     @objc func start() {
         brain?.stop()
+        
+        uiFunc()
         
         brain = Brain<CGFloat>.create(label: label ,number_of_input: number_of_input, number_of_hidden: number_of_hidden, number_of_outputs: number_of_outputs)
         
@@ -259,7 +364,7 @@ class ViewController: UIViewController {
         
         DispatchQueue(label: "work").async { [self] in
             
-            guard let brainObj = brain?.load(name: label) else {
+            guard let brainObj = Brain<CGFloat>.load(name: label) else {
                 print(false)
                 return
             }
@@ -285,6 +390,11 @@ class ViewController: UIViewController {
         DispatchQueue(label: "work").async { [self] in
             
             brain?.start(inputs: inputs, targets: targets, iterations: iterations, numberOfTraningsForIteration: numberOfTraningsForIteration,
+                         traindIndex: { target, index in
+                            updateImage(target.firstIndex(where: { num in
+                                return num == 1
+                            })!, index)
+                         },
                          progressUpdate:  { iteration in
                             let iter = " ( Iteration: \(iteration) ) "
                             
@@ -325,17 +435,17 @@ extension UIImage {
     }
 }
 
-extension CGFloat {
-    func print() {
+extension Int {
+    func stringValue() -> String {
         switch self {
         case 0:
-            Swift.print("Cat")
+            return "Cat"
         case 1:
-            Swift.print("Rainbow")
-        case 2:
-            Swift.print("Train")
+            return "Rainbow"
+            case 2:
+                return "Train"
         default:
-            Swift.print("Dont Know")
+            return "Dont Know"
         }
     }
 }
