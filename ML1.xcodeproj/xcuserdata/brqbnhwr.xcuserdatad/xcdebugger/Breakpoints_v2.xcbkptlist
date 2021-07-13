@@ -3,22 +3,4 @@
    uuid = "C2620CA3-8C9B-4BF8-B4C7-ED774AF489FE"
    type = "1"
    version = "2.0">
-   <Breakpoints>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "D4763265-6106-4E81-B2BE-3CD11F58F0A9"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "ML1/NN/Brain.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "283"
-            endingLineNumber = "283"
-            landmarkName = "start(inputs:targets:iterations:numberOfTraningsForIteration:file:line:function:ativtionMethod:valueInitFunction:progressUpdate:completed:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-   </Breakpoints>
 </Bucket>

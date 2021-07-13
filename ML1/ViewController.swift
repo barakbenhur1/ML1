@@ -41,6 +41,10 @@ class ViewController: UIViewController {
     
     var iterations = 0
     
+    var queue: [() -> ()]!
+    
+    var timer: Timer!
+    
     var dataArr: [Any]?
     
     var brain: Brain<CGFloat>?
@@ -249,7 +253,13 @@ class ViewController: UIViewController {
     
     var updateImage: ((_ label: Int, _ index: Int) -> ())!
     
+    var ui = false
+    
     func uiFunc() {
+        
+        guard !ui else { return }
+        
+        ui = true
         
         let title = UILabel(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: 34), size: CGSize(width: 400, height: 50)))
         title.numberOfLines = 0
@@ -288,14 +298,7 @@ class ViewController: UIViewController {
             self.view.addSubview(imageWrraperView)
         }
         
-        var queue = [() -> ()]()
-        
         var start = true
-        
-        let timer = Timer(timeInterval: 1.2, repeats: true) { timer in
-            guard queue.count > 0 else { return }
-            queue.remove(at: 0)()
-        }
         
         updateImage = { [self] label, index in
             DispatchQueue.main.async {
@@ -327,13 +330,19 @@ class ViewController: UIViewController {
                 }
             }
         }
-        
-        RunLoop.current.add(timer, forMode: .common)
     }
     
     @objc func start() {
+        
+        DispatchQueue.main.async {
+            self.startButton.isUserInteractionEnabled = false
+            self.startButton.setTitleColor(.gray, for: .normal)
+        }
+        
         brain?.stop()
         
+        queue = [() -> ()]()
+    
         uiFunc()
         
         brain = Brain<CGFloat>.create(label: label ,number_of_input: number_of_input, number_of_hidden: number_of_hidden, number_of_outputs: number_of_outputs)
@@ -362,6 +371,8 @@ class ViewController: UIViewController {
         
         brain?.stop()
         
+        queue = [() -> ()]()
+        
         DispatchQueue(label: "work").async { [self] in
             
             guard let brainObj = Brain<CGFloat>.load(name: label) else {
@@ -382,6 +393,29 @@ class ViewController: UIViewController {
             self.startButton.isEnabled = on
             self.saveButton.isEnabled = on
             self.loadButton.isEnabled = on
+        }
+        
+        timerControl(on: on)
+    }
+    
+    func timerControl(on: Bool) {
+        if on {
+            timer = Timer(timeInterval: 2.4, repeats: true) { [self] timer in
+                guard queue.count > 0 else { return }
+                queue.remove(at: 0)()
+            }
+            RunLoop.current.add(timer, forMode: .common)
+        }
+        else {
+            if timer != nil {
+                timer.invalidate()
+                timer = nil
+            }
+            
+            if queue != nil && queue.count > 0 {
+                self.queue.popLast()!()
+                self.queue = [() -> ()]()
+            }
         }
     }
     
@@ -406,6 +440,17 @@ class ViewController: UIViewController {
                             print()
                             let s = " .... Done .... "
                             brain?.printDescription(inputs: inputsTest, targets: targetsTest, title: s)
+                            
+                            if timer != nil {
+                                timer.invalidate()
+                                timer = nil
+                            }
+                            
+                            if queue != nil && queue.count > 0 {
+                                self.queue.popLast()!()
+                                self.queue = [() -> ()]()
+                            }
+                            
                             print(s)
                          })
         }

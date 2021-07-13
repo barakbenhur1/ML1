@@ -17,9 +17,9 @@
 		3098F70A269705CD002D8CEF /* Perceptron.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3098F709269705CD002D8CEF /* Perceptron.swift */; };
 		3098F70C26970A9B002D8CEF /* Trainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3098F70B26970A9B002D8CEF /* Trainer.swift */; };
 		30BAF5AA269879C900DA1A75 /* Matrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30BAF5A9269879C900DA1A75 /* Matrix.swift */; };
-		30F63556269BE003006B0CC6 /* rainbow.bin in Resources */ = {isa = PBXBuildFile; fileRef = 30F63555269BE003006B0CC6 /* rainbow.bin */; };
-		30F63558269C8FCE006B0CC6 /* cat.bin in Resources */ = {isa = PBXBuildFile; fileRef = 30F63557269C8FCE006B0CC6 /* cat.bin */; };
-		30F6355A269C9E90006B0CC6 /* train.bin in Resources */ = {isa = PBXBuildFile; fileRef = 30F63559269C9E90006B0CC6 /* train.bin */; };
+		30F6356A269D11AA006B0CC6 /* cat.bin in Resources */ = {isa = PBXBuildFile; fileRef = 30F63567269D11A9006B0CC6 /* cat.bin */; };
+		30F6356B269D11AA006B0CC6 /* rainbow.bin in Resources */ = {isa = PBXBuildFile; fileRef = 30F63568269D11A9006B0CC6 /* rainbow.bin */; };
+		30F6356C269D11AA006B0CC6 /* train.bin in Resources */ = {isa = PBXBuildFile; fileRef = 30F63569269D11AA006B0CC6 /* train.bin */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,9 +35,9 @@
 		3098F709269705CD002D8CEF /* Perceptron.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Perceptron.swift; sourceTree = "<group>"; };
 		3098F70B26970A9B002D8CEF /* Trainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trainer.swift; sourceTree = "<group>"; };
 		30BAF5A9269879C900DA1A75 /* Matrix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Matrix.swift; sourceTree = "<group>"; };
-		30F63555269BE003006B0CC6 /* rainbow.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = rainbow.bin; sourceTree = "<group>"; };
-		30F63557269C8FCE006B0CC6 /* cat.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = cat.bin; sourceTree = "<group>"; };
-		30F63559269C9E90006B0CC6 /* train.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = train.bin; sourceTree = "<group>"; };
+		30F63567269D11A9006B0CC6 /* cat.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = cat.bin; sourceTree = "<group>"; };
+		30F63568269D11A9006B0CC6 /* rainbow.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = rainbow.bin; sourceTree = "<group>"; };
+		30F63569269D11AA006B0CC6 /* train.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = train.bin; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -105,9 +105,9 @@
 		30F63551269BD037006B0CC6 /* Data */ = {
 			isa = PBXGroup;
 			children = (
-				30F63555269BE003006B0CC6 /* rainbow.bin */,
-				30F63557269C8FCE006B0CC6 /* cat.bin */,
-				30F63559269C9E90006B0CC6 /* train.bin */,
+				30F63567269D11A9006B0CC6 /* cat.bin */,
+				30F63568269D11A9006B0CC6 /* rainbow.bin */,
+				30F63569269D11AA006B0CC6 /* train.bin */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -170,11 +170,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				3098F6FE2697020D002D8CEF /* LaunchScreen.storyboard in Resources */,
-				30F63556269BE003006B0CC6 /* rainbow.bin in Resources */,
-				30F6355A269C9E90006B0CC6 /* train.bin in Resources */,
+				30F6356B269D11AA006B0CC6 /* rainbow.bin in Resources */,
+				30F6356C269D11AA006B0CC6 /* train.bin in Resources */,
 				3098F6FB2697020D002D8CEF /* Assets.xcassets in Resources */,
+				30F6356A269D11AA006B0CC6 /* cat.bin in Resources */,
 				3098F6F92697020C002D8CEF /* Main.storyboard in Resources */,
-				30F63558269C8FCE006B0CC6 /* cat.bin in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
