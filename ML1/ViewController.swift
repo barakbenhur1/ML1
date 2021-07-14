@@ -173,7 +173,7 @@ class ViewController: UIViewController {
                             values = line.components(separatedBy: delimiter)
                         }
                         
-//                        for value in values {
+                        //                        for value in values {
                         // Put the values into the tuple and add it to the items array
                         for _ in 0..<12 {
                             values.remove(at: 0)
@@ -192,7 +192,7 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         
         let buttonH = 120
-        let buttonW = 400
+        let buttonW = 396
         
         startButton = UIButton(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: view.center.y - 280), size: CGSize(width: buttonW, height: buttonH)))
         startButton.setTitle("Start", for: .normal)
@@ -229,23 +229,23 @@ class ViewController: UIViewController {
         
         /// 1  ================================================
         
-        let a = parseCSV(contentsOfURL: NSURL(fileURLWithPath: "/Users/barak ben hur/Desktop/Projects/ML1/ML1/Data/fonts/BERNARD.csv"), encoding: .utf8, error: nil)
+        let a = parseCSV(contentsOfURL: NSURL(fileURLWithPath: "/Users/barak ben hur/Downloads/untitled folder/fonts/BERNARD.csv"), encoding: .utf8, error: nil)
         
-        let b = parseCSV(contentsOfURL: NSURL(fileURLWithPath: "/Users/barak ben hur/Desktop/Projects/ML1/ML1/Data/fonts/AGENCY.csv"), encoding: .utf8, error: nil)
-
-        let c = parseCSV(contentsOfURL: NSURL(fileURLWithPath: "/Users/barak ben hur/Desktop/Projects/ML1/ML1/Data/fonts/CONSTANTIA.csv"), encoding: .utf8, error: nil)
+        let b = parseCSV(contentsOfURL: NSURL(fileURLWithPath: "/Users/barak ben hur/Desktop/Projects/Data/fonts/AGENCY.csv"), encoding: .utf8, error: nil)
         
-//        let l = getFile(forResource: "letter-recognition", withExtension: "data")
-//
-//        let catbyteArr = getFile(forResource: "cat", withExtension: "bin")
-//
-//        let rainbowbyteArr = getFile(forResource: "rainbow", withExtension: "bin")
-//
-//        let trainbyteArr = getFile(forResource: "train", withExtension: "bin")
+        let c = parseCSV(contentsOfURL: NSURL(fileURLWithPath: "/Users/barak ben hur/Desktop/Projects/Data/fonts/CONSTANTIA.csv"), encoding: .utf8, error: nil)
+        
+        //        let l = getFile(forResource: "letter-recognition", withExtension: "data")
+        //
+        //        let catbyteArr = getFile(forResource: "cat", withExtension: "bin")
+        //
+        //        let rainbowbyteArr = getFile(forResource: "rainbow", withExtension: "bin")
+        //
+        //        let trainbyteArr = getFile(forResource: "train", withExtension: "bin")
         
         /// 2 ================================================
         
-//        dataArr = [catbyteArr!, rainbowbyteArr!, trainbyteArr!]
+        //        dataArr = [catbyteArr!, rainbowbyteArr!, trainbyteArr!]
         
         var traningObj = [[CGFloat]]()
         
@@ -257,9 +257,9 @@ class ViewController: UIViewController {
         
         /// 3 ================================================
         
-//        var imageSize: Int = 16
+        //        var imageSize: Int = 16
         
-//        var itemSize = 769
+        //        var itemSize = 769
         
         dataArr = [a, b, c] as! [[[UInt8]]]
         
@@ -311,7 +311,7 @@ class ViewController: UIViewController {
         
         let indexForLength = 0
         
-        label = "ML1"
+        label = "ML3"
         
         inputs = traningObj
         
@@ -323,7 +323,7 @@ class ViewController: UIViewController {
         
         number_of_outputs = targets[indexForLength].count
         
-        iterations = 20
+        iterations = 4
         
         numberOfTraningsForIteration = inputs[indexForLength].count
         
@@ -336,40 +336,46 @@ class ViewController: UIViewController {
     
     var ui = false
     
+    var startImage = true
+    
     func uiFunc() {
+        
+        let frameRate = 2
+        var frameCount = 0
         
         guard !ui else { return }
         
         ui = true
         
-        let title = UILabel(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: 38), size: CGSize(width: 400, height: 46)))
+        let title = UILabel(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: 40), size: CGSize(width: 400, height: 50)))
         title.numberOfLines = 0
         title.textAlignment = .center
         title.font = UIFont(name: "AvenirNext", size: 18)
         
-        let imageWrraperView = UIView(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: 84), size: CGSize(width: 400, height: 400)))
+        let imageWrraperView = UIView(frame: CGRect(origin: CGPoint(x: view.center.x - 201, y: 94), size: CGSize(width: 400, height: 400)))
         
         imageWrraperView.layer.cornerRadius = 10
-        imageWrraperView.layer.borderWidth = 0.8
-        imageWrraperView.layer.borderColor = UIColor.black.cgColor
+        imageWrraperView.layer.borderWidth = 4
+        imageWrraperView.layer.borderColor = UIColor.darkGray.cgColor
         
-        let imageView = UIImageView(frame: imageWrraperView.bounds)
-        imageView.contentMode = .center
-        imageView.contentScaleFactor = 20
+        let imageView = UIImageView(frame: CGRect(origin: imageWrraperView.bounds.origin, size: CGSize(width: 100, height: 100)))
+        imageView.contentMode = .scaleAspectFill
+        imageView.contentScaleFactor = 10
         imageView.clipsToBounds = true
         imageView.layer.cornerRadius = 10
         
         imageWrraperView.addSubview(imageView)
         
+        imageView.center = CGPoint(x: imageWrraperView.center.x - 10 , y:  imageWrraperView.center.y - 90)
         
         startButton.alpha = 0.5
         saveButton.alpha = 0.5
         loadButton.alpha = 0.5
         
         UIView.animate(withDuration: 0.4) { [self] in
-            startButton.frame = CGRect(origin: CGPoint(x: saveButton.frame.origin.x, y: view.center.y + 35), size: saveButton.frame.size)
-            saveButton.frame = CGRect(origin: CGPoint(x: saveButton.frame.origin.x, y: view.center.y + 157), size: saveButton.frame.size)
-            loadButton.frame = CGRect(origin: CGPoint(x: loadButton.frame.origin.x, y: view.center.y + 280), size: loadButton.frame.size)
+            startButton.frame = CGRect(origin: CGPoint(x: saveButton.frame.origin.x, y: view.center.y + 38), size: saveButton.frame.size)
+            saveButton.frame = CGRect(origin: CGPoint(x: saveButton.frame.origin.x, y: view.center.y + 160), size: saveButton.frame.size)
+            loadButton.frame = CGRect(origin: CGPoint(x: loadButton.frame.origin.x, y: view.center.y + 283), size: loadButton.frame.size)
             
             startButton.alpha = 1
             saveButton.alpha = 1
@@ -381,12 +387,11 @@ class ViewController: UIViewController {
             self.view.addSubview(imageWrraperView)
         }
         
-        var start = true
-        
         updateImage = { [self] label, index in
             
             let nextImage = {
                 DispatchQueue.main.async {
+                    title.alpha = 0.3
                     imageView.alpha = 0.2
                     imageView.transform = .init(scaleX: 0.01, y: 0.001)
                     UIView.animate(withDuration: 0.3) {
@@ -404,11 +409,16 @@ class ViewController: UIViewController {
                         let startRange = (text as NSString).range(of: real)
                         let endRange = (text as NSString).range(of: guass)
                         
-                        attr.addAttributes([.foregroundColor : UIColor.systemOrange], range: NSRange(location: startRange.location + startRange.length, length: label.stringValue().count))
+                        attr.addAttributes([.foregroundColor : UIColor.purple], range: NSRange(location: startRange.location + startRange.length, length: label.stringValue().count))
                         
                         attr.addAttributes([.foregroundColor : label == mlIndex ? UIColor.systemGreen : UIColor.systemRed], range: NSRange(location: endRange.location + endRange.length, length: (mlIndex?.stringValue().count)!))
                         
+                        attr.addAttributes([.font : UIFont(name: "AvenirNext-Bold", size: 18)! as UIFont], range: startRange)
+                        
+                        attr.addAttributes([.font : UIFont(name: "AvenirNext-Bold", size: 18)! as UIFont], range: endRange)
+                        
                         title.attributedText = attr
+                        title.alpha = 1
                         imageView.image = UIImage(cgImage: image!)
                         imageView.alpha = 1
                         imageView.transform = .identity
@@ -417,14 +427,15 @@ class ViewController: UIViewController {
             }
             
             DispatchQueue.main.async {
-                if start {
-                    start = false
+                queue.append {
                     nextImage()
                 }
-                else {
-                    queue.append {
-                        nextImage()
-                    }
+                
+                frameCount += 1
+                
+                if startImage || frameCount % frameRate == 0  {
+                    startImage = false
+                    nextImage()
                 }
             }
         }
@@ -432,18 +443,20 @@ class ViewController: UIViewController {
     
     @objc func start() {
         
-        DispatchQueue.main.async {
-            self.startButton.isUserInteractionEnabled = false
-            self.startButton.setTitleColor(.gray, for: .normal)
-        }
+        self.startButton.setTitle("Restart", for: .normal)
         
+        //        timerControl(on: false)
+        //
         brain?.stop()
         
         queue = [() -> ()]()
-    
-        uiFunc()
         
-        brain = Brain<CGFloat>.create(label: label ,number_of_input: number_of_input, number_of_hidden: number_of_hidden, number_of_outputs: number_of_outputs)
+        if brain == nil {
+            
+            uiFunc()
+            
+            brain = Brain<CGFloat>.create(label: label ,number_of_input: number_of_input, number_of_hidden: number_of_hidden, number_of_outputs: number_of_outputs)
+        }
         
         print(true)
         
@@ -467,6 +480,8 @@ class ViewController: UIViewController {
     @objc func load() {
         ml(on: false)
         
+        startButton.setTitle("Restart", for: .normal)
+        
         brain?.stop()
         
         queue = [() -> ()]()
@@ -483,6 +498,7 @@ class ViewController: UIViewController {
             }
             
             brain = brainObj
+            label = brain!.getLabel()
             
             brain?.setTraindIndex(traindIndex: { target, index in
                 updateImage(target.firstIndex(where: { num in
@@ -504,36 +520,47 @@ class ViewController: UIViewController {
             self.loadButton.isEnabled = on
         }
         
-        timerControl(on: on)
+        //        timerControl(on: on)
     }
     
-    func timerControl(on: Bool) {
-        if on {
-            timer = Timer(timeInterval: 2.4, repeats: true) { [self] timer in
-                guard queue.count > 0 else { return }
-                queue.remove(at: 0)()
-            }
-            RunLoop.current.add(timer, forMode: .common)
-        }
-        else {
-            if timer != nil {
-                timer.invalidate()
-                timer = nil
-            }
-            
-            if queue != nil && queue.count > 0 {
-                self.queue.popLast()!()
-                self.queue = [() -> ()]()
-            }
-        }
-    }
+    //    func timerControl(on: Bool) {
+    //        if on {
+    //            timer = Timer(timeInterval: 2.4, repeats: true) { [self] timer in
+    //                guard queue.count > 0 else { return }
+    //                queue.remove(at: 0)()
+    //            }
+    //            RunLoop.current.add(timer, forMode: .common)
+    //        }
+    //        else {
+    //            if timer != nil {
+    //                timer.invalidate()
+    //                timer = nil
+    //            }
+    //
+    //            if queue != nil && queue.count > 0 {
+    //                self.queue.popLast()!()
+    //                self.queue = [() -> ()]()
+    //            }
+    //        }
+    //    }
+    
+    var uiUp = 0
     
     func mlStart() {
+        
+        uiUp = 0
         
         DispatchQueue(label: "work").async { [self] in
             
             brain?.start(inputs: inputs, targets: targets, iterations: iterations, numberOfTraningsForIteration: numberOfTraningsForIteration,
                          traindIndex: { target, index in
+                            guard uiUp % 10 == 0 else {
+                                uiUp += 1
+                                return
+                            }
+                            
+                            uiUp += 1
+                            
                             updateImage(target.firstIndex(where: { num in
                                 return num == 1
                             })!, index)
@@ -542,7 +569,10 @@ class ViewController: UIViewController {
                             let iter = " ( Iteration: \(iteration) ) "
                             
                             brain?.printDescription(inputs: inputs, targets: targets, title: iter)
+                            
                             print()
+                            
+                            queue = [() -> ()]()
                             
                          }, completed: {
                             print()
@@ -557,8 +587,9 @@ class ViewController: UIViewController {
                             
                             if queue != nil && queue.count > 0 {
                                 self.queue.popLast()!()
-                                self.queue = [() -> ()]()
                             }
+                            
+                            self.queue = [() -> ()]()
                             
                             print(s)
                          })
@@ -571,19 +602,19 @@ extension UIImage {
         guard width > 0 && height > 0, pixels.count == width * height else { return nil }
         var data = pixels
         guard let providerRef = CGDataProvider(data: Data(bytes: &data, count: data.count * MemoryLayout<PixelData>.size) as CFData)
-            else { return nil }
+        else { return nil }
         guard let cgim = CGImage(
-            width: width,
-            height: height,
-            bitsPerComponent: 8,
-            bitsPerPixel: 32,
-            bytesPerRow: width * MemoryLayout<PixelData>.size,
-            space: CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue),
-            provider: providerRef,
-            decode: nil,
-            shouldInterpolate: true,
-            intent: .defaultIntent)
+                width: width,
+                height: height,
+                bitsPerComponent: 8,
+                bitsPerPixel: 32,
+                bytesPerRow: width * MemoryLayout<PixelData>.size,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue),
+                provider: providerRef,
+                decode: nil,
+                shouldInterpolate: true,
+                intent: .defaultIntent)
         else { return nil }
         self.init(cgImage: cgim)
     }
@@ -596,8 +627,8 @@ extension Int {
             return "BERNARD"
         case 1:
             return "AGENCY"
-            case 2:
-                return "CONSTANTIA"
+        case 2:
+            return "CONSTANTIA"
         default:
             return "Dont Know"
         }

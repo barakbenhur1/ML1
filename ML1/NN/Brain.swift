@@ -14,7 +14,7 @@ private var sem: DispatchSemaphore? = DispatchSemaphore(value: 1)
 private var stopStatic = false
 
 class Brain<T: Numeric & Codable>: Codable {
-        
+    
     enum CodingKeys: String, CodingKey {
         case number_of_input, number_of_hidden, number_of_outputs, input_to_hidden, hidden_to_output, bias_hidden, bias_output, learning_rate, iterations, randomCaycles, label
     }
@@ -74,7 +74,7 @@ class Brain<T: Numeric & Codable>: Codable {
     private var deActiveFunction: ((T) -> (T))!
     
     private var valueInitFunction: (() -> (T))!
-
+    
     private var label: String = ""
     
     private var iterations = 3000
@@ -82,7 +82,7 @@ class Brain<T: Numeric & Codable>: Codable {
     private var randomCaycles = 2000
     
     deinit {
-      print("deinit...")
+        print("deinit...")
     }
     
     private init(number_of_input: Int, number_of_hidden: Int, number_of_outputs: Int, input_to_hidden: Matrix<T>, hidden_to_output: Matrix<T>, bias_hidden: Matrix<T>, bias_output: Matrix<T>, learning_rate: T = learningRate(), valueInitFunction: @escaping () -> (T)) {
@@ -100,7 +100,7 @@ class Brain<T: Numeric & Codable>: Codable {
     }
     
     private convenience init(number_of_input: Int, number_of_hidden: Int, number_of_outputs: Int, learning_rate: T = learningRate(), valueInitFunction: @escaping () -> (T)) {
-       
+        
         self.init(number_of_input: number_of_input, number_of_hidden: number_of_hidden, number_of_outputs: number_of_outputs, input_to_hidden: Matrix(rows: number_of_hidden, cols: number_of_input, valueInitFunction: valueInitFunction), hidden_to_output: Matrix(rows: number_of_outputs, cols: number_of_hidden, valueInitFunction: valueInitFunction), bias_hidden: Matrix(rows: number_of_hidden, cols: 1, valueInitFunction: valueInitFunction), bias_output: Matrix(rows: number_of_outputs, cols: 1, valueInitFunction: valueInitFunction), learning_rate: learning_rate, valueInitFunction: valueInitFunction)
     }
     
@@ -151,12 +151,12 @@ class Brain<T: Numeric & Codable>: Codable {
         
         let targetMatrix = Matrix<T>.fromMatrixArray(other: [targets])
         
-       
+        
         let outputsError = try? Matrix<T>.subtract(m1: targetMatrix, m2: outputsMatrix)
-    
+        
         
         let gradients = try? Matrix<T>.map(m: outputsMatrix, function: deActiveFunction)
-       
+        
         gradients!.multiplyByCell(other: outputsError!)
         
         gradients!.multiply(n: learning_rate)
@@ -166,7 +166,7 @@ class Brain<T: Numeric & Codable>: Codable {
         
         let hiddenToOutputDaltas = try? Matrix<T>.multiply(m1: gradients!, m2: hiddenT!)
         
-       
+        
         hidden_to_output.add(other: hiddenToOutputDaltas!)
         
         bias_output.add(other: gradients!)
@@ -213,12 +213,18 @@ class Brain<T: Numeric & Codable>: Codable {
         let brain = Brain<T>.getInstances()![name]!
         
         brain.label = file
-       
+        
         return brain
     }
     
     static func create<T: Numeric>(label: String = #file, number_of_input: Int, number_of_hidden: Int, number_of_outputs: Int, learning_rate: T? = nil, valueInitFunction: (() -> (T))? = nil) -> Brain<T> {
         return Brain<T>.create(file: label ,number_of_input: number_of_input, number_of_hidden: number_of_hidden, number_of_outputs: number_of_outputs, learning_rate: learning_rate, initFunction: valueInitFunction)
+    }
+    
+    static func new<T: Numeric>(label: String = #file, number_of_input: Int, number_of_hidden: Int, number_of_outputs: Int, learning_rate: T? = nil, valueInitFunction: (() -> (T))? = nil) -> Brain<T> {
+        
+        let randomLength = 8
+        return Brain<T>.create(file: String.randomString(length: randomLength) ,number_of_input: number_of_input, number_of_hidden: number_of_hidden, number_of_outputs: number_of_outputs, learning_rate: learning_rate, initFunction: valueInitFunction)
     }
     
     enum ActivationMethod {
@@ -262,7 +268,7 @@ class Brain<T: Numeric & Codable>: Codable {
     func stop() {
         stopRun = true
     }
-
+    
     func start(inputs: [[T]], targets: [[T]], iterations: Int? = nil, numberOfTraningsForIteration: Int? = nil, file: String = #file, line: Int = #line, function: String = #function, ativtionMethod: ActivationMethod = .sigmoid, valueInitFunction: (() -> (T))? = nil, traindIndex: (([T], Int) -> ())? = nil, progressUpdate: ((_ iteration: Int) -> ())? = nil, completed: (() -> ())? = nil) {
         
         stopRun = false
@@ -301,7 +307,7 @@ class Brain<T: Numeric & Codable>: Codable {
         })
         
         brain.brainObj = brainObj
-
+        
         brain.start(inputs: inputs, targets: targets, iterations: iterations, numberOfTraningsForIteration: numberOfTraningsForIteration, ativtionMethod: ativtionMethod, valueInitFunction: valueInitFunction, traindIndex: traindIndex, progressUpdate: progressUpdate, completed: completed)
     }
     
@@ -331,13 +337,13 @@ class Brain<T: Numeric & Codable>: Codable {
         complete?()
     }
     
-    func printDescription(inputs:[[T]], targets: [[T]], title: String) {
+    func printDescription(inputs:[[T]], targets: [[T]], title: String, fullDesc: Bool = false) {
         
         var strings = [String]()
         
         var count: CGFloat = 0
-       
-        for i in 0..<inputs.count {
+        
+        for i in 0..<targets.count {
             let predict = predict(inputs: inputs[i])
             let max = predict.max { a, b in
                 return Brain<T>.compere(a: a,b: b)
@@ -346,7 +352,7 @@ class Brain<T: Numeric & Codable>: Codable {
             if correct {
                 count += 1
             }
-            let s = "Input: \(inputs[i]), Prediction: \(predict), Real Answer: \(targets[i]), Correct: \(correct)"
+            let s = "Input: \(fullDesc ? "\(inputs[i])" : "No Desc"), Prediction: \(predict), Real Answer: \(targets[i]), Correct: \(correct)"
             strings.append(s)
         }
         
@@ -369,10 +375,14 @@ class Brain<T: Numeric & Codable>: Codable {
         let s = String(repeating: "=", count:(max / 2) - (title.count / 2) + 8)
         print("\(s)\(title)\(s)")
         for i in 0..<strings.count {
-            print("        \(strings[i])")
+            DispatchQueue.main.async {
+                print("        \(strings[i])")
+            }
         }
-        print("\(s)\(String(repeating: "=", count: title.count))\(s)")
-        print()
+        DispatchQueue.main.async {
+            print("\(s)\(String(repeating: "=", count: title.count))\(s)")
+            print()
+        }
     }
     
     @discardableResult private func saveGeneration(key: String) -> Bool {
@@ -384,8 +394,8 @@ class Brain<T: Numeric & Codable>: Codable {
                 let jsonData = try jsonEncoder.encode(self)
                 let jsonString = String(data: jsonData, encoding: String.Encoding.utf8)
                 try jsonString?.write(to: pathWithFilename,
-                                     atomically: true,
-                                     encoding: .utf8)
+                                      atomically: true,
+                                      encoding: .utf8)
                 return true
             } catch {
                 print("save fail: \(error.localizedDescription)")
@@ -420,6 +430,10 @@ class Brain<T: Numeric & Codable>: Codable {
             print("error: \(error)")
         }
         return nil
+    }
+    
+    func getLabel() -> String {
+        return label
     }
     
     @discardableResult static private func loadGeneration(key: String) -> Brain<T>? {
@@ -471,10 +485,6 @@ class Brain<T: Numeric & Codable>: Codable {
         guard let brain = loadGeneration(key: name) else { return nil }
         
         singalSem?.wait()
-        
-//        if let instance = Brain<T>.getInstances()![brain.label] {
-//            return instance
-//        }
         
         Brain<T>.addInstances(key: brain.label, value: brain)
         
@@ -598,7 +608,7 @@ extension Brain where T == CGFloat {
     private static func eqal(a: T, b: T) -> Bool {
         return a == b
     }
-
+    
     private static func addValue(key: String, value: Brain<T>) {
         instances[key] = value
     }
@@ -634,7 +644,7 @@ extension Brain where T == Double {
     private static func eqal(a: T, b: T) -> Bool {
         return a == b
     }
-
+    
     
     private static func random() -> T {
         return Double.random(in: -1...1)
@@ -667,7 +677,7 @@ extension Brain where T == Float {
     private static func eqal(a: T, b: T) -> Bool {
         return a == b
     }
-
+    
     
     private static func random() -> T {
         return Float.random(in: -1...1)
@@ -696,7 +706,7 @@ extension Brain where T == Float16 {
     private static func eqal(a: T, b: T) -> Bool {
         return a == b
     }
-
+    
     
     private static func addValue(key: String, value: Brain<T>) {
         instances[key] = value
@@ -708,5 +718,33 @@ extension Brain where T == Float16 {
     
     private static func learningRate() -> T {
         return 0.1
+    }
+}
+
+extension String {
+    
+    static func randomString(length: Int) -> String {
+        let letters : NSString = "abcdefghijklmnopqrstuvwxyz'ABCDEFGHIJKLMNOPQRSTUVWXYZ;.,?:@#$%^&*()_+=-±!0123456789\n"
+        let len = UInt32(letters.length)
+        
+        var randomString = ""
+        
+        //        var repeatFlag = true
+        //        while repeatFlag {
+        let max = {
+            return length > 4 ? length : 4
+        }()
+        
+        let count = Int.random(in: 4...max)
+        
+        for _ in 0..<count {
+            let rand = arc4random_uniform(len)
+            var nextChar = letters.character(at: Int(rand))
+            randomString += NSString(characters: &nextChar, length: 1) as String
+            
+            
+        }
+        
+        return randomString
     }
 }

@@ -17,11 +17,6 @@
 		3098F70A269705CD002D8CEF /* Perceptron.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3098F709269705CD002D8CEF /* Perceptron.swift */; };
 		3098F70C26970A9B002D8CEF /* Trainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3098F70B26970A9B002D8CEF /* Trainer.swift */; };
 		30BAF5AA269879C900DA1A75 /* Matrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30BAF5A9269879C900DA1A75 /* Matrix.swift */; };
-		30F6356A269D11AA006B0CC6 /* cat.bin in Resources */ = {isa = PBXBuildFile; fileRef = 30F63567269D11A9006B0CC6 /* cat.bin */; };
-		30F6356B269D11AA006B0CC6 /* rainbow.bin in Resources */ = {isa = PBXBuildFile; fileRef = 30F63568269D11A9006B0CC6 /* rainbow.bin */; };
-		30F6356C269D11AA006B0CC6 /* train.bin in Resources */ = {isa = PBXBuildFile; fileRef = 30F63569269D11AA006B0CC6 /* train.bin */; };
-		30F6356E269DC978006B0CC6 /* letter-recognition.data in Resources */ = {isa = PBXBuildFile; fileRef = 30F6356D269DC978006B0CC6 /* letter-recognition.data */; };
-		30F63576269DD4E7006B0CC6 /* fonts in Resources */ = {isa = PBXBuildFile; fileRef = 30F63575269DD4E7006B0CC6 /* fonts */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,11 +32,6 @@
 		3098F709269705CD002D8CEF /* Perceptron.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Perceptron.swift; sourceTree = "<group>"; };
 		3098F70B26970A9B002D8CEF /* Trainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trainer.swift; sourceTree = "<group>"; };
 		30BAF5A9269879C900DA1A75 /* Matrix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Matrix.swift; sourceTree = "<group>"; };
-		30F63567269D11A9006B0CC6 /* cat.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = cat.bin; sourceTree = "<group>"; };
-		30F63568269D11A9006B0CC6 /* rainbow.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = rainbow.bin; sourceTree = "<group>"; };
-		30F63569269D11AA006B0CC6 /* train.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = train.bin; sourceTree = "<group>"; };
-		30F6356D269DC978006B0CC6 /* letter-recognition.data */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "letter-recognition.data"; sourceTree = "<group>"; };
-		30F63575269DD4E7006B0CC6 /* fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = fonts; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,7 +64,6 @@
 		3098F6F02697020C002D8CEF /* ML1 */ = {
 			isa = PBXGroup;
 			children = (
-				30F63551269BD037006B0CC6 /* Data */,
 				30BAF5AC26988BDA00DA1A75 /* NN */,
 				30BAF5AB26988BC900DA1A75 /* Matrix */,
 				3098F6F12697020C002D8CEF /* AppDelegate.swift */,
@@ -104,18 +93,6 @@
 				3098F70B26970A9B002D8CEF /* Trainer.swift */,
 			);
 			path = NN;
-			sourceTree = "<group>";
-		};
-		30F63551269BD037006B0CC6 /* Data */ = {
-			isa = PBXGroup;
-			children = (
-				30F63575269DD4E7006B0CC6 /* fonts */,
-				30F63567269D11A9006B0CC6 /* cat.bin */,
-				30F63568269D11A9006B0CC6 /* rainbow.bin */,
-				30F63569269D11AA006B0CC6 /* train.bin */,
-				30F6356D269DC978006B0CC6 /* letter-recognition.data */,
-			);
-			path = Data;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -176,13 +153,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				3098F6FE2697020D002D8CEF /* LaunchScreen.storyboard in Resources */,
-				30F6356B269D11AA006B0CC6 /* rainbow.bin in Resources */,
-				30F6356E269DC978006B0CC6 /* letter-recognition.data in Resources */,
-				30F6356C269D11AA006B0CC6 /* train.bin in Resources */,
 				3098F6FB2697020D002D8CEF /* Assets.xcassets in Resources */,
-				30F6356A269D11AA006B0CC6 /* cat.bin in Resources */,
 				3098F6F92697020C002D8CEF /* Main.storyboard in Resources */,
-				30F63576269DD4E7006B0CC6 /* fonts in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
