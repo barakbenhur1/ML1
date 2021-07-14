@@ -541,18 +541,12 @@ class ViewController: UIViewController {
                             let s = " .... Done .... "
                             brain?.printDescription(inputs: inputsTest, targets: targetsTest, title: s)
                             
-                            if timer != nil {
-                                timer.invalidate()
-                                timer = nil
-                            }
+                            self.queue = [() -> ()]()
+                            print(s)
                             
                             if queue != nil && queue.count > 0 {
                                 self.queue.popLast()!()
                             }
-                            
-                            self.queue = [() -> ()]()
-                            
-                            print(s)
                          })
         }
     }

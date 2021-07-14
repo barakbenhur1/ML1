@@ -375,14 +375,10 @@ class Brain<T: Numeric & Codable>: Codable {
         let s = String(repeating: "=", count:(max / 2) - (title.count / 2) + 8)
         print("\(s)\(title)\(s)")
         for i in 0..<strings.count {
-            DispatchQueue.main.async {
-                print("        \(strings[i])")
-            }
+            print("        \(strings[i])")
         }
-        DispatchQueue.main.async {
-            print("\(s)\(String(repeating: "=", count: title.count))\(s)")
-            print()
-        }
+        print("\(s)\(String(repeating: "=", count: title.count))\(s)")
+        print()
     }
     
     @discardableResult private func saveGeneration(key: String) -> Bool {
