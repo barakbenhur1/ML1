@@ -318,9 +318,10 @@ class ViewController: UIViewController {
     
     var startImage = true
     
+    var frameRate = 2
+    
     func uiFunc() {
         
-        let frameRate = 2
         var frameCount = 0
         
         guard !ui else { return }
@@ -502,6 +503,7 @@ class ViewController: UIViewController {
             self.startButton.isEnabled = on
             self.saveButton.isEnabled = on
             self.loadButton.isEnabled = on
+            self.frameRate = 2
         }
     }
     
@@ -536,17 +538,26 @@ class ViewController: UIViewController {
                             queue = [() -> ()]()
                             
                          }, completed: {
+                            
+                            frameRate = 20
+                            
+                            for i in 0..<targetsTest.count {
+                                updateImage(targetsTest[i].firstIndex(where: { num in
+                                    return num == 1
+                                })!, i)
+                            }
+                            
                             print()
                             print()
                             let s = " .... Done .... "
                             brain?.printDescription(inputs: inputsTest, targets: targetsTest, title: s)
                             
-                            self.queue = [() -> ()]()
-                            print(s)
-                            
                             if queue != nil && queue.count > 0 {
                                 self.queue.popLast()!()
                             }
+                            
+                            self.queue = [() -> ()]()
+                            print(s)
                          })
         }
     }

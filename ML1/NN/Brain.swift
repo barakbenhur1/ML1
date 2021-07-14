@@ -352,8 +352,10 @@ class Brain<T: Numeric & Codable>: Codable {
             if correct {
                 count += 1
             }
-            let s = "Input: \(fullDesc ? "\(inputs[i])" : "No Desc"), Prediction: \(predict), Real Answer: \(targets[i]), Correct: \(correct)"
-            strings.append(s)
+            if fullDesc {
+                let s = "Input: \(fullDesc ? "\(inputs[i])" : "No Desc"), Prediction: \(predict), Real Answer: \(targets[i]), Correct: \(correct)"
+                strings.append(s)
+            }
         }
         
         let correctPrecent = (100 * count) / CGFloat(targets.count)
