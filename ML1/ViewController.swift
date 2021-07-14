@@ -29,6 +29,8 @@ class ViewController: UIViewController {
     var inputsTest: [[CGFloat]] = [[0, 0], [1, 0], [0, 1], [1, 1]]
     var targetsTest: [[CGFloat]] = [[0], [1] ,[1], [0]]
     
+    var categorys: [String] = [String]()
+    
     var label = #file
     
     var number_of_input = 0
@@ -123,7 +125,7 @@ class ViewController: UIViewController {
         return image;
     }
     
-    func parseCSV (contentsOfURL: NSURL, encoding: String.Encoding, error: NSErrorPointer) -> [[UInt8]]? {
+    func parseCSV (contentsOfURL: NSURL, encoding: String.Encoding, error: NSErrorPointer) -> (values: [[UInt8]], tag: String)? {
         // Load the CSV file and parse it
         let delimiter = ","
         var stations:[[UInt8]]?
@@ -185,7 +187,7 @@ class ViewController: UIViewController {
             }
         }
         
-        return stations!
+        return (stations!, contentsOfURL.absoluteURL!.lastPathComponent.replacingOccurrences(of: ".csv", with: ""))
     }
     
     override func viewDidLoad() {
@@ -218,98 +220,149 @@ class ViewController: UIViewController {
         loadButton.backgroundColor = .systemOrange
         loadButton.addTarget(self, action: #selector(load), for: .touchUpInside)
         
-        view.addSubview(startButton)
-        view.addSubview(saveButton)
-        view.addSubview(loadButton)
-        
-        prepareData()
+        prepareData { [self] in
+            DispatchQueue.main.sync {
+                view.addSubview(startButton)
+                view.addSubview(saveButton)
+                view.addSubview(loadButton)
+            }
+        }
     }
     
-    func prepareData() {
+    func prepareData(complete: @escaping () -> () = {}) {
         
         /// 1  ================================================
         
-        let a = parseCSV(contentsOfURL: NSURL(fileURLWithPath: "/Users/barak ben hur/Downloads/untitled folder/fonts/BERNARD.csv"), encoding: .utf8, error: nil)
+        dataArr = [[[UInt8]]]()
+        categorys = [String]()
         
-        let b = parseCSV(contentsOfURL: NSURL(fileURLWithPath: "/Users/barak ben hur/Desktop/Projects/Data/fonts/AGENCY.csv"), encoding: .utf8, error: nil)
+        let csvs = [
+            "/Users/barak ben hur/Downloads/untitled folder/fonts/BERNARD.csv",
+            "/Users/barak ben hur/Desktop/Projects/Data/fonts/AGENCY.csv",
+            "/Users/barak ben hur/Desktop/Projects/Data/fonts/CONSTANTIA.csv",
+            "/Users/barak ben hur/Desktop/Projects/Data/fonts/ARIAL.csv",
+            "/Users/barak ben hur/Desktop/Projects/Data/fonts/COMIC.csv",
+            "/Users/barak ben hur/Desktop/Projects/Data/fonts/PRISTINA.csv"
+        ]
         
-        let c = parseCSV(contentsOfURL: NSURL(fileURLWithPath: "/Users/barak ben hur/Desktop/Projects/Data/fonts/CONSTANTIA.csv"), encoding: .utf8, error: nil)
+        let loadingLabel = UILabel(frame: CGRect(origin: CGPoint(x: view.center.x - 120, y: view.center.y - 100), size: CGSize(width: 300, height: 100)))
+        loadingLabel.font = .systemFont(ofSize: 40)
         
-        var traningObj = [[CGFloat]]()
+        view.addSubview(loadingLabel)
         
-        var targetTarningObj = [[CGFloat]]()
+        let colors: [UIColor] = [.systemIndigo, .magenta, .systemPink, .systemOrange, .systemYellow, .systemPurple, .systemBlue, .systemGreen, .brown, .black, .systemGray]
+        var index = 0
         
-        var testingObj = [[CGFloat]]()
-        
-        var testingTarningObj = [[CGFloat]]()
-        
-        /// 3 ================================================
-        
-        dataArr = [a, b, c] as! [[[UInt8]]]
-        
-        let pixelNormal: UInt8 = 255
-        
-        let traningDataRatio: CGFloat = 0.8
-        
-        let initValue: CGFloat = 0
-        
-        let assingedValue: CGFloat = 1
-        
-        let start: Int = 0
-        
-        var total: Int = 200
-        
-        guard let dataArr = dataArr as? [[[UInt8]]] else { return }
-        
-        for i in start..<dataArr.count {
-            
-            var targesArr = [CGFloat](repeating: initValue, count: dataArr.count)
-            
-            targesArr[i] = assingedValue
-            
-            total = dataArr[i].count
-            
-            for n in start..<total {
-                
-                let imageArr = [UInt8](dataArr[i][n]).map { 255 - $0 }
-                
-                let imageNormalArr: [CGFloat] = imageArr.map { CGFloat($0) / CGFloat(pixelNormal) }
-                
-                if CGFloat(n) < CGFloat(total) * traningDataRatio {
-                    targetTarningObj.append(targesArr)
-                    traningObj.append(imageNormalArr)
+        let loading = Timer(timeInterval: 0.2, repeats: true) { _ in
+            let text = "Loading Data"
+            let attr = NSMutableAttributedString(string: text)
+            var space = 0
+            for i in 0..<text.count {
+                if (text as NSString).substring(with: NSRange(location: i, length: 1)) ==  " " {
+                    space += 1
                 }
-                else {
-                    testingTarningObj.append(targesArr)
-                    testingObj.append(imageNormalArr)
+                if (text as NSString).substring(with: NSRange(location: i, length: 1)) !=  " " {
+                    attr.addAttributes([.foregroundColor : colors[(colors.count - (i - space - index)) % (colors.count)]], range: NSRange(location: i, length: 1))
                 }
             }
+            
+            loadingLabel.attributedText = attr
+            
+            index += 1
         }
         
+        loading.fire()
         
-        /// 4  ================================================
+        RunLoop.main.add(loading, forMode: .common)
         
-        let indexForLength = 0
         
-        label = "ML3"
-        
-        inputs = traningObj
-        
-        targets = targetTarningObj
-        
-        number_of_input = inputs[indexForLength].count
-        
-        number_of_hidden = 64
-        
-        number_of_outputs = targets[indexForLength].count
-        
-        iterations = 4
-        
-        numberOfTraningsForIteration = inputs[indexForLength].count
-        
-        inputsTest = testingObj
-        
-        targetsTest = testingTarningObj
+        DispatchQueue(label: "CSV").async { [self] in
+            for csv in csvs {
+                guard let tupleCsv = parseCSV(contentsOfURL: NSURL(fileURLWithPath: csv), encoding: .utf8, error: nil) else { continue }
+                dataArr?.append(tupleCsv.values)
+                categorys.append(tupleCsv.tag)
+            }
+
+            var traningObj = [[CGFloat]]()
+
+            var targetTarningObj = [[CGFloat]]()
+
+            var testingObj = [[CGFloat]]()
+
+            var testingTarningObj = [[CGFloat]]()
+
+            /// 3 ================================================
+
+            let pixelNormal: UInt8 = 255
+
+            let traningDataRatio: CGFloat = 0.8
+
+            let initValue: CGFloat = 0
+
+            let assingedValue: CGFloat = 1
+
+            let start: Int = 0
+
+            var total: Int = 200
+
+            guard let dataArr = dataArr as? [[[UInt8]]] else { return }
+
+            for i in start..<dataArr.count {
+
+                var targesArr = [CGFloat](repeating: initValue, count: dataArr.count)
+
+                targesArr[i] = assingedValue
+
+                total = dataArr[i].count
+
+                for n in start..<total {
+
+                    let imageArr = [UInt8](dataArr[i][n]).map { 255 - $0 }
+
+                    let imageNormalArr: [CGFloat] = imageArr.map { CGFloat($0) / CGFloat(pixelNormal) }
+
+                    if CGFloat(n) < CGFloat(total) * traningDataRatio {
+                        targetTarningObj.append(targesArr)
+                        traningObj.append(imageNormalArr)
+                    }
+                    else {
+                        testingTarningObj.append(targesArr)
+                        testingObj.append(imageNormalArr)
+                    }
+                }
+            }
+
+            DispatchQueue.main.async {
+                loading.invalidate()
+                loadingLabel.removeFromSuperview()
+            }
+
+            /// 4  ================================================
+
+            let indexForLength = 0
+
+            label = "ML3"
+
+            inputs = traningObj
+
+            targets = targetTarningObj
+
+            number_of_input = inputs[indexForLength].count
+
+            number_of_hidden = 64
+
+            number_of_outputs = targets[indexForLength].count
+
+            iterations = 4
+
+            numberOfTraningsForIteration = inputs[indexForLength].count
+
+            inputsTest = testingObj
+
+            targetsTest = testingTarningObj
+
+            complete()
+        }
     }
     
     var updateImage: ((_ label: Int, _ index: Int) -> ())!
@@ -378,37 +431,37 @@ class ViewController: UIViewController {
             
             let nextImage = {
                 DispatchQueue.main.async {
-                    title.alpha = 0.3
-                    imageView.alpha = 0.2
-                    imageView.transform = .init(scaleX: 0.01, y: 0.001)
-                    UIView.animate(withDuration: 0.3) {
-                        var arr = inputs[index].map { UInt8($0 * 255) }
-                        let size = sqrt(Double(inputs[index].count))
-                        let image = byteArrayToCGImage(raw: &arr, w: Int(size), h: Int(size))
-                        let predict = brain?.predict(inputs: inputs[index])
-                        let max = predict!.max()
-                        let mlIndex = predict?.firstIndex(of: max!)
-                        let real = "Font Is: "
-                        let guass = "NN Predict: "
-                        let text = "\(real)\(label.stringValue())" + "\n" + "\(guass)\(mlIndex!.stringValue())"
-                        let attr = NSMutableAttributedString(string: text)
-                        
-                        let startRange = (text as NSString).range(of: real)
-                        let endRange = (text as NSString).range(of: guass)
-                        
-                        attr.addAttributes([.foregroundColor : UIColor.purple], range: NSRange(location: startRange.location + startRange.length, length: label.stringValue().count))
-                        
-                        attr.addAttributes([.foregroundColor : label == mlIndex ? UIColor.green : UIColor.systemRed], range: NSRange(location: endRange.location + endRange.length, length: (mlIndex?.stringValue().count)!))
-                        
-                        attr.addAttributes([.font : UIFont(name: "AvenirNext-Bold", size: 18)! as UIFont], range: startRange)
-                        
-                        attr.addAttributes([.font : UIFont(name: "AvenirNext-Bold", size: 18)! as UIFont], range: endRange)
-                        
-                        title.attributedText = attr
+                    title.alpha = 0.2
+                    imageView.alpha = 0.06
+
+                    var arr = inputs[index].map { UInt8($0 * 255) }
+                    let size = sqrt(Double(inputs[index].count))
+                    let image = byteArrayToCGImage(raw: &arr, w: Int(size), h: Int(size))
+                    let predict = brain?.predict(inputs: inputs[index])
+                    let max = predict!.max()
+                    let mlIndex = predict?.firstIndex(of: max!)
+                    let real = "Font Is: "
+                    let guass = "NN Predict: "
+                    let text = "\(real)\(categorys[label])" + "\n" + "\(guass)\(categorys[mlIndex!])"
+                    let attr = NSMutableAttributedString(string: text)
+                    
+                    let startRange = (text as NSString).range(of: real)
+                    let endRange = (text as NSString).range(of: guass)
+                    
+                    attr.addAttributes([.foregroundColor : UIColor.purple], range: NSRange(location: startRange.location + startRange.length, length: categorys[label].count))
+                    
+                    attr.addAttributes([.foregroundColor : label == mlIndex ? UIColor.green : UIColor.systemRed], range: NSRange(location: endRange.location + endRange.length, length: (categorys[mlIndex!].count)))
+                    
+                    attr.addAttributes([.font : UIFont(name: "AvenirNext-Bold", size: 18)! as UIFont], range: startRange)
+                    
+                    attr.addAttributes([.font : UIFont(name: "AvenirNext-Bold", size: 18)! as UIFont], range: endRange)
+                    
+                    title.attributedText = attr
+                    
+                    UIView.animate(withDuration: 0.4, delay: 0, options: .curveEaseIn) {
                         title.alpha = 1
                         imageView.image = UIImage(cgImage: image!)
                         imageView.alpha = 1
-                        imageView.transform = .identity
                     }
                 }
             }
@@ -431,7 +484,7 @@ class ViewController: UIViewController {
     @objc func start() {
         
         self.startButton.setTitle("Restart", for: .normal)
-    
+        
         brain?.stop()
         
         queue = [() -> ()]()
@@ -504,6 +557,7 @@ class ViewController: UIViewController {
             self.saveButton.isEnabled = on
             self.loadButton.isEnabled = on
             self.frameRate = 2
+            self.queue = [() -> ()]()
         }
     }
     
@@ -531,15 +585,15 @@ class ViewController: UIViewController {
                          progressUpdate:  { iteration in
                             let iter = " ( Iteration: \(iteration) ) "
                             
-                            brain?.printDescription(inputs: inputs, targets: targets, title: iter)
+                           /// brain?.printDescription(inputs: inputs, targets: targets, title: iter)
                             
-                            print()
+                          ///  print()
                             
                             queue = [() -> ()]()
                             
                          }, completed: {
                             
-                            frameRate = 20
+                            queue = [() -> ()]()
                             
                             for i in 0..<targetsTest.count {
                                 updateImage(targetsTest[i].firstIndex(where: { num in
@@ -547,16 +601,22 @@ class ViewController: UIViewController {
                                 })!, i)
                             }
                             
+                            let timer = Timer(timeInterval: 2, repeats: true) { timer in
+                                guard queue.count > 0 else {
+                                    timer.invalidate()
+                                    return
+                                }
+                                
+                                queue.remove(at: 0)
+                            }
+                            
+                            RunLoop.main.add(timer, forMode: .common)
+                            
                             print()
                             print()
                             let s = " .... Done .... "
-                            brain?.printDescription(inputs: inputsTest, targets: targetsTest, title: s)
+                            brain?.printDescription(inputs: inputsTest, targets: targetsTest, title: s, fullDesc: false)
                             
-                            if queue != nil && queue.count > 0 {
-                                self.queue.popLast()!()
-                            }
-                            
-                            self.queue = [() -> ()]()
                             print(s)
                          })
         }
