@@ -279,8 +279,6 @@ class ViewController: UIViewController {
         
         for i in start..<dataArr.count {
             
-            //            imageSize = dataArr[i].count
-            
             var targesArr = [CGFloat](repeating: initValue, count: dataArr.count)
             
             targesArr[i] = assingedValue
@@ -288,8 +286,6 @@ class ViewController: UIViewController {
             total = dataArr[i].count
             
             for n in start..<total {
-                
-                //                let offset = n * imageSize
                 
                 let imageArr = [UInt8](dataArr[i][n]).map { 255 - $0 }
                 
@@ -450,9 +446,7 @@ class ViewController: UIViewController {
     @objc func start() {
         
         self.startButton.setTitle("Restart", for: .normal)
-        
-        //        timerControl(on: false)
-        //
+    
         brain?.stop()
         
         queue = [() -> ()]()
@@ -525,30 +519,7 @@ class ViewController: UIViewController {
             self.saveButton.isEnabled = on
             self.loadButton.isEnabled = on
         }
-        
-        //        timerControl(on: on)
     }
-    
-    //    func timerControl(on: Bool) {
-    //        if on {
-    //            timer = Timer(timeInterval: 2.4, repeats: true) { [self] timer in
-    //                guard queue.count > 0 else { return }
-    //                queue.remove(at: 0)()
-    //            }
-    //            RunLoop.current.add(timer, forMode: .common)
-    //        }
-    //        else {
-    //            if timer != nil {
-    //                timer.invalidate()
-    //                timer = nil
-    //            }
-    //
-    //            if queue != nil && queue.count > 0 {
-    //                self.queue.popLast()!()
-    //                self.queue = [() -> ()]()
-    //            }
-    //        }
-    //    }
     
     var uiUp = 0
     
