@@ -347,35 +347,41 @@ class ViewController: UIViewController {
         
         ui = true
         
-        let title = UILabel(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: 40), size: CGSize(width: 400, height: 50)))
+        let title = UILabel(frame: CGRect(origin: CGPoint(x: view.center.x - 210, y: 60), size: CGSize(width: 400, height: 50)))
         title.numberOfLines = 0
         title.textAlignment = .center
         title.font = UIFont(name: "AvenirNext", size: 18)
         
-        let imageWrraperView = UIView(frame: CGRect(origin: CGPoint(x: view.center.x - 201, y: 94), size: CGSize(width: 400, height: 400)))
+        let imageWrraperView = UIView(frame: CGRect(origin: CGPoint(x: view.center.x - 201, y: 84), size: CGSize(width: 400, height: 400)))
         
         imageWrraperView.layer.cornerRadius = 10
         imageWrraperView.layer.borderWidth = 4
         imageWrraperView.layer.borderColor = UIColor.darkGray.cgColor
         
-        let imageView = UIImageView(frame: CGRect(origin: imageWrraperView.bounds.origin, size: CGSize(width: 100, height: 100)))
-        imageView.contentMode = .scaleAspectFill
-        imageView.contentScaleFactor = 10
-        imageView.clipsToBounds = true
-        imageView.layer.cornerRadius = 10
+        let imageWrraperSubview = UIView(frame: CGRect(origin: imageWrraperView.bounds.origin, size: CGSize(width: 118, height: 118)))
+        imageWrraperSubview.contentMode = .scaleAspectFill
+        imageWrraperSubview.contentScaleFactor = 10
+        imageWrraperSubview.clipsToBounds = true
+        imageWrraperSubview.layer.cornerRadius = 10
+        imageWrraperSubview.backgroundColor = .white
         
-        imageWrraperView.addSubview(imageView)
+        let imageView = UIImageView(frame:  CGRect(origin: CGPoint(x: imageWrraperSubview.bounds.origin.x + 9, y: imageWrraperSubview.bounds.origin.y + 9), size: CGSize(width: 100, height: 100)))
         
-        imageView.center = CGPoint(x: imageWrraperView.center.x - 10 , y:  imageWrraperView.center.y - 90)
+        imageWrraperSubview.addSubview(imageView)
+        imageWrraperView.addSubview(imageWrraperSubview)
+        
+        imageWrraperView.backgroundColor = .systemGray
+        
+        imageWrraperSubview.center = CGPoint(x: imageWrraperView.center.x - 10 , y:  imageWrraperView.center.y - 90)
         
         startButton.alpha = 0.5
         saveButton.alpha = 0.5
         loadButton.alpha = 0.5
         
         UIView.animate(withDuration: 0.4) { [self] in
-            startButton.frame = CGRect(origin: CGPoint(x: saveButton.frame.origin.x, y: view.center.y + 38), size: saveButton.frame.size)
-            saveButton.frame = CGRect(origin: CGPoint(x: saveButton.frame.origin.x, y: view.center.y + 160), size: saveButton.frame.size)
-            loadButton.frame = CGRect(origin: CGPoint(x: loadButton.frame.origin.x, y: view.center.y + 283), size: loadButton.frame.size)
+            startButton.frame = CGRect(origin: CGPoint(x: saveButton.frame.origin.x, y: view.center.y + 28), size: saveButton.frame.size)
+            saveButton.frame = CGRect(origin: CGPoint(x: saveButton.frame.origin.x, y: view.center.y + 154), size: saveButton.frame.size)
+            loadButton.frame = CGRect(origin: CGPoint(x: loadButton.frame.origin.x, y: view.center.y + 280), size: loadButton.frame.size)
             
             startButton.alpha = 1
             saveButton.alpha = 1
@@ -383,7 +389,7 @@ class ViewController: UIViewController {
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-            self.view.addSubview(title)
+            imageWrraperView.addSubview(title)
             self.view.addSubview(imageWrraperView)
         }
         
@@ -411,7 +417,7 @@ class ViewController: UIViewController {
                         
                         attr.addAttributes([.foregroundColor : UIColor.purple], range: NSRange(location: startRange.location + startRange.length, length: label.stringValue().count))
                         
-                        attr.addAttributes([.foregroundColor : label == mlIndex ? UIColor.systemGreen : UIColor.systemRed], range: NSRange(location: endRange.location + endRange.length, length: (mlIndex?.stringValue().count)!))
+                        attr.addAttributes([.foregroundColor : label == mlIndex ? UIColor.green : UIColor.systemRed], range: NSRange(location: endRange.location + endRange.length, length: (mlIndex?.stringValue().count)!))
                         
                         attr.addAttributes([.font : UIFont(name: "AvenirNext-Bold", size: 18)! as UIFont], range: startRange)
                         
