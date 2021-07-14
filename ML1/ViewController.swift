@@ -16,6 +16,8 @@ public struct PixelData {
 
 class ViewController: UIViewController {
     
+    var titleLabel : UILabel!
+    var sperLabel : UILabel!
     var startButton : UIButton!
     var saveButton: UIButton!
     var loadButton : UIButton!
@@ -42,10 +44,6 @@ class ViewController: UIViewController {
     var numberOfTraningsForIteration = 0
     
     var iterations = 0
-    
-    var queue: [() -> ()]!
-    
-    var timer: Timer!
     
     var dataArr: [Any]?
     
@@ -196,6 +194,16 @@ class ViewController: UIViewController {
         let buttonH = 120
         let buttonW = 396
         
+        
+        titleLabel = UILabel(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: 80), size: CGSize(width: buttonW, height: buttonH)))
+        sperLabel = UILabel(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: 88), size: CGSize(width: buttonW, height: buttonH)))
+        
+        titleLabel.text = "Neural Network Training"
+        titleLabel.font = UIFont(descriptor: titleLabel.font.fontDescriptor, size: 24)
+        sperLabel.text = String(repeating: "_", count: titleLabel.text!.count + 8)
+        titleLabel.textAlignment = .center
+        sperLabel.textAlignment = .center
+        
         startButton = UIButton(frame: CGRect(origin: CGPoint(x: view.center.x - 200, y: view.center.y - 280), size: CGSize(width: buttonW, height: buttonH)))
         startButton.setTitle("Start", for: .normal)
         startButton.setTitleColor(.gray, for: .disabled)
@@ -220,6 +228,9 @@ class ViewController: UIViewController {
         loadButton.backgroundColor = .systemOrange
         loadButton.addTarget(self, action: #selector(load), for: .touchUpInside)
         
+        view.addSubview(titleLabel)
+        view.addSubview(sperLabel)
+        
         prepareData { [self] in
             DispatchQueue.main.sync {
                 view.addSubview(startButton)
@@ -237,13 +248,18 @@ class ViewController: UIViewController {
         categorys = [String]()
         
         let csvs = [
-            "/Users/barak ben hur/Downloads/untitled folder/fonts/BERNARD.csv",
-            "/Users/barak ben hur/Desktop/Projects/Data/fonts/AGENCY.csv",
-            "/Users/barak ben hur/Desktop/Projects/Data/fonts/CONSTANTIA.csv",
-            "/Users/barak ben hur/Desktop/Projects/Data/fonts/ARIAL.csv",
+            "/Users/barak ben hur/Desktop/Projects/Data/fonts/CENTAUR.csv",
             "/Users/barak ben hur/Desktop/Projects/Data/fonts/COMIC.csv",
-            "/Users/barak ben hur/Desktop/Projects/Data/fonts/PRISTINA.csv"
+            "/Users/barak ben hur/Desktop/Projects/Data/fonts/PRISTINA.csv",
+            "/Users/barak ben hur/Desktop/Projects/Data/fonts/CHILLER.csv",
+            "/Users/barak ben hur/Desktop/Projects/Data/fonts/BAITI.csv",
+            "/Users/barak ben hur/Desktop/Projects/Data/fonts/VIVALDI.csv",
+            "/Users/barak ben hur/Desktop/Projects/Data/fonts/TREBUCHET.csv",
+            "/Users/barak ben hur/Desktop/Projects/Data/fonts/GUNPLAY.csv"
         ]
+        
+        
+        /// 2  ================================================
         
         let loadingLabel = UILabel(frame: CGRect(origin: CGPoint(x: view.center.x - 120, y: view.center.y - 100), size: CGSize(width: 300, height: 100)))
         loadingLabel.font = .systemFont(ofSize: 40)
@@ -275,12 +291,17 @@ class ViewController: UIViewController {
         
         RunLoop.main.add(loading, forMode: .common)
         
+        var min = Int.max
         
         DispatchQueue(label: "CSV").async { [self] in
             for csv in csvs {
                 guard let tupleCsv = parseCSV(contentsOfURL: NSURL(fileURLWithPath: csv), encoding: .utf8, error: nil) else { continue }
                 dataArr?.append(tupleCsv.values)
                 categorys.append(tupleCsv.tag)
+                
+                if tupleCsv.values.count < min {
+                    min = tupleCsv.values.count
+                }
             }
 
             var traningObj = [[CGFloat]]()
@@ -303,7 +324,7 @@ class ViewController: UIViewController {
 
             let start: Int = 0
 
-            var total: Int = 200
+            let total: Int = min
 
             guard let dataArr = dataArr as? [[[UInt8]]] else { return }
 
@@ -313,7 +334,7 @@ class ViewController: UIViewController {
 
                 targesArr[i] = assingedValue
 
-                total = dataArr[i].count
+//                total = dataArr[i].count
 
                 for n in start..<total {
 
@@ -322,12 +343,12 @@ class ViewController: UIViewController {
                     let imageNormalArr: [CGFloat] = imageArr.map { CGFloat($0) / CGFloat(pixelNormal) }
 
                     if CGFloat(n) < CGFloat(total) * traningDataRatio {
-                        targetTarningObj.append(targesArr)
                         traningObj.append(imageNormalArr)
+                        targetTarningObj.append(targesArr)
                     }
                     else {
-                        testingTarningObj.append(targesArr)
                         testingObj.append(imageNormalArr)
+                        testingTarningObj.append(targesArr)
                     }
                 }
             }
@@ -341,7 +362,7 @@ class ViewController: UIViewController {
 
             let indexForLength = 0
 
-            label = "ML3"
+            label = "ML1"
 
             inputs = traningObj
 
@@ -353,9 +374,9 @@ class ViewController: UIViewController {
 
             number_of_outputs = targets[indexForLength].count
 
-            iterations = 4
+            iterations = 10
 
-            numberOfTraningsForIteration = inputs[indexForLength].count
+            numberOfTraningsForIteration = inputs.count
 
             inputsTest = testingObj
 
@@ -408,6 +429,8 @@ class ViewController: UIViewController {
         
         imageWrraperSubview.center = CGPoint(x: imageWrraperView.center.x - 10 , y:  imageWrraperView.center.y - 90)
         
+        titleLabel.alpha = 0.5
+        sperLabel.alpha = 0.5
         startButton.alpha = 0.5
         saveButton.alpha = 0.5
         loadButton.alpha = 0.5
@@ -416,10 +439,14 @@ class ViewController: UIViewController {
             startButton.frame = CGRect(origin: CGPoint(x: saveButton.frame.origin.x, y: view.center.y + 28), size: saveButton.frame.size)
             saveButton.frame = CGRect(origin: CGPoint(x: saveButton.frame.origin.x, y: view.center.y + 154), size: saveButton.frame.size)
             loadButton.frame = CGRect(origin: CGPoint(x: loadButton.frame.origin.x, y: view.center.y + 280), size: loadButton.frame.size)
+            titleLabel.frame = CGRect(origin: CGPoint(x: titleLabel.frame.origin.x, y: 4), size: titleLabel.frame.size)
+            sperLabel.frame = CGRect(origin: CGPoint(x: sperLabel.frame.origin.x, y: 12), size: sperLabel.frame.size)
             
             startButton.alpha = 1
             saveButton.alpha = 1
             loadButton.alpha = 1
+            titleLabel.alpha = 1
+            sperLabel.alpha = 1
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
@@ -428,6 +455,12 @@ class ViewController: UIViewController {
         }
         
         updateImage = { [self] label, index in
+            
+            frameCount += 1
+            
+            guard startImage || frameCount % frameRate == 0 else  { return }
+                
+            startImage = false
             
             let nextImage = {
                 DispatchQueue.main.async {
@@ -466,18 +499,7 @@ class ViewController: UIViewController {
                 }
             }
             
-            DispatchQueue.main.async {
-                queue.append {
-                    nextImage()
-                }
-                
-                frameCount += 1
-                
-                if startImage || frameCount % frameRate == 0  {
-                    startImage = false
-                    nextImage()
-                }
-            }
+            nextImage()
         }
     }
     
@@ -486,8 +508,6 @@ class ViewController: UIViewController {
         self.startButton.setTitle("Restart", for: .normal)
         
         brain?.stop()
-        
-        queue = [() -> ()]()
         
         if brain == nil {
             
@@ -522,8 +542,6 @@ class ViewController: UIViewController {
         
         brain?.stop()
         
-        queue = [() -> ()]()
-        
         DispatchQueue(label: "work").async { [self] in
             
             guard let brainObj = Brain<CGFloat>.load(name: label) else {
@@ -536,6 +554,7 @@ class ViewController: UIViewController {
             }
             
             brain = brainObj
+            brain?.changeSize(number_of_input: number_of_input, number_of_hidden: number_of_hidden, number_of_outputs: number_of_outputs)
             label = brain!.getLabel()
             
             brain?.setTraindIndex(traindIndex: { target, index in
@@ -557,7 +576,6 @@ class ViewController: UIViewController {
             self.saveButton.isEnabled = on
             self.loadButton.isEnabled = on
             self.frameRate = 2
-            self.queue = [() -> ()]()
         }
     }
     
@@ -566,12 +584,11 @@ class ViewController: UIViewController {
     func mlStart() {
         
         uiUp = 0
-        
+
         DispatchQueue(label: "work").async { [self] in
-            
             brain?.start(inputs: inputs, targets: targets, iterations: iterations, numberOfTraningsForIteration: numberOfTraningsForIteration,
                          traindIndex: { target, index in
-                            guard uiUp % 10 == 0 else {
+                            guard uiUp % 10 == 0 || uiUp == targets.count - 1 else {
                                 uiUp += 1
                                 return
                             }
@@ -582,81 +599,31 @@ class ViewController: UIViewController {
                                 return num == 1
                             })!, index)
                          },
-                         progressUpdate:  { iteration in
+                         progressUpdate: { iteration in
                             let iter = " ( Iteration: \(iteration) ) "
                             
-                           /// brain?.printDescription(inputs: inputs, targets: targets, title: iter)
+                            brain?.printDescription(inputs: inputs, targets: targets, title: iter)
                             
-                          ///  print()
-                            
-                            queue = [() -> ()]()
+                            print()
                             
                          }, completed: {
                             
-                            queue = [() -> ()]()
-                            
                             for i in 0..<targetsTest.count {
+                                guard i % 10 == 0 || i == targets.count - 1 else {
+                                    return
+                                }
                                 updateImage(targetsTest[i].firstIndex(where: { num in
                                     return num == 1
                                 })!, i)
                             }
                             
-                            let timer = Timer(timeInterval: 2, repeats: true) { timer in
-                                guard queue.count > 0 else {
-                                    timer.invalidate()
-                                    return
-                                }
-                                
-                                queue.remove(at: 0)
-                            }
-                            
-                            RunLoop.main.add(timer, forMode: .common)
-                            
                             print()
                             print()
                             let s = " .... Done .... "
-                            brain?.printDescription(inputs: inputsTest, targets: targetsTest, title: s, fullDesc: false)
+                            brain?.printDescription(inputs: inputsTest, targets: targetsTest, title: s, fullDesc:  true)
                             
                             print(s)
                          })
-        }
-    }
-}
-
-extension UIImage {
-    convenience init?(pixels: [PixelData], width: Int, height: Int) {
-        guard width > 0 && height > 0, pixels.count == width * height else { return nil }
-        var data = pixels
-        guard let providerRef = CGDataProvider(data: Data(bytes: &data, count: data.count * MemoryLayout<PixelData>.size) as CFData)
-        else { return nil }
-        guard let cgim = CGImage(
-                width: width,
-                height: height,
-                bitsPerComponent: 8,
-                bitsPerPixel: 32,
-                bytesPerRow: width * MemoryLayout<PixelData>.size,
-                space: CGColorSpaceCreateDeviceRGB(),
-                bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue),
-                provider: providerRef,
-                decode: nil,
-                shouldInterpolate: true,
-                intent: .defaultIntent)
-        else { return nil }
-        self.init(cgImage: cgim)
-    }
-}
-
-extension Int {
-    func stringValue() -> String {
-        switch self {
-        case 0:
-            return "BERNARD"
-        case 1:
-            return "AGENCY"
-        case 2:
-            return "CONSTANTIA"
-        default:
-            return "Dont Know"
         }
     }
 }

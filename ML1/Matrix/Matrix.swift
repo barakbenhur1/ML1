@@ -78,6 +78,27 @@ public class Matrix<T: Numeric & Codable>: Codable {
         self.rawValues = [[T]](other.rawValues)
     }
     
+    func chanceSize(newRows: Int, newCols: Int, valueInitFunction: @escaping (() -> (T)) = { return .zero }) {
+       
+        self.valueInitFunction = valueInitFunction
+       
+        if newRows == mrows && newCols == mcols { return }
+       
+        var newMat = [[T]]()
+        
+        for i in 0..<newRows {
+            var arr = [T]()
+            for j in 0..<newCols {
+                arr.append(i < mrows && j < mcols ? rawValues[i][j] : valueInitFunction())
+            }
+            newMat.append(arr)
+        }
+        
+        mrows = newRows
+        mcols = newCols
+        rawValues = newMat
+    }
+    
     func initRawData() {
         for i in 0..<rows {
             rawValues.append([])

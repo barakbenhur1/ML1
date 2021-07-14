@@ -109,6 +109,13 @@ class Brain<T: Numeric & Codable>: Codable {
         self.init(number_of_input: brain.number_of_input, number_of_hidden: brain.number_of_hidden, number_of_outputs: brain.number_of_outputs, input_to_hidden:  Matrix(other: brain.input_to_hidden), hidden_to_output:  Matrix(other: brain.hidden_to_output), bias_hidden: Matrix(other: brain.bias_hidden), bias_output: Matrix(other: brain.bias_output), learning_rate: brain.learning_rate, valueInitFunction:  brain.valueInitFunction)
     }
     
+    func changeSize(number_of_input: Int, number_of_hidden: Int, number_of_outputs: Int, valueInitFunction: @escaping (() -> (T)) = Brain<T>.random) {
+        input_to_hidden.chanceSize(newRows: number_of_hidden, newCols: number_of_input, valueInitFunction: valueInitFunction)
+        hidden_to_output.chanceSize(newRows: number_of_outputs, newCols: number_of_hidden, valueInitFunction: valueInitFunction)
+        bias_hidden.chanceSize(newRows: number_of_hidden, newCols: 1, valueInitFunction: valueInitFunction)
+        bias_output.chanceSize(newRows: number_of_outputs, newCols: 1, valueInitFunction: valueInitFunction)
+    }
+    
     func predict(inputs: [T]) -> [T] {
         sem?.wait()
         let inputsMatrix = Matrix<T>.fromMatrixArray(other: [inputs])
@@ -269,8 +276,10 @@ class Brain<T: Numeric & Codable>: Codable {
         stopRun = true
     }
     
+    private var correctPredictions = 0
+    
     func start(inputs: [[T]], targets: [[T]], iterations: Int? = nil, numberOfTraningsForIteration: Int? = nil, file: String = #file, line: Int = #line, function: String = #function, ativtionMethod: ActivationMethod = .sigmoid, valueInitFunction: (() -> (T))? = nil, traindIndex: (([T], Int) -> ())? = nil, progressUpdate: ((_ iteration: Int) -> ())? = nil, completed: (() -> ())? = nil) {
-        
+
         stopRun = false
         stopStatic = false
         
@@ -284,12 +293,21 @@ class Brain<T: Numeric & Codable>: Codable {
         for i in 0..<self.iterations {
             guard !stopRun && !stopStatic else { return }
             var j = 0
+            correctPredictions = 0
             while j < randomCaycles {
                 guard !stopRun && !stopStatic else { return }
                 let index = Int.random(in: 0..<inputs.count)
                 train(inputs: inputs[index], targets: targets[index] ,activeFunction: activeFunction, deActiveFunction: deActiveFunction)
-                j += 1
+                
                 traindIndex?(targets[index], index)
+                
+                let isCorrect = isCorrect(inputs: inputs[index], targets: targets[index])
+
+                if isCorrect.correct {
+                    correctPredictions += 1
+                }
+                
+                j += 1
             }
             
             progressUpdate?(i)
@@ -337,30 +355,42 @@ class Brain<T: Numeric & Codable>: Codable {
         complete?()
     }
     
+    private func isCorrect(inputs:[T], targets: [T]) -> (predict: [T], correct: BooleanLiteralType) {
+        let predict = predict(inputs: inputs)
+        let max = predict.max { a, b in
+            return Brain<T>.compere(a: a,b: b)
+        }
+        let correct = Brain<T>.eqal(a: targets[predict.firstIndex(of: max!)!])
+        
+        return (predict, correct)
+    }
+    
     func printDescription(inputs:[[T]], targets: [[T]], title: String, fullDesc: Bool = false) {
         
         var strings = [String]()
+        var correct = correctPredictions
+        var numOfTargets = randomCaycles
         
-        var count: CGFloat = 0
-        
-        for i in 0..<targets.count {
-            let predict = predict(inputs: inputs[i])
-            let max = predict.max { a, b in
-                return Brain<T>.compere(a: a,b: b)
-            }
-            let correct = Brain<T>.eqal(a: targets[i][predict.firstIndex(of: max!)!])
-            if correct {
-                count += 1
-            }
-            if fullDesc {
-                let s = "Input: \(fullDesc ? "\(inputs[i])" : "No Desc"), Prediction: \(predict), Real Answer: \(targets[i]), Correct: \(correct)"
+        if fullDesc {
+            var count = 0
+            numOfTargets = targets.count
+            for i in 0..<targets.count {
+                let isCorrect = isCorrect(inputs: inputs[i], targets: targets[i])
+                
+                if isCorrect.correct {
+                    count += 1
+                }
+                
+                let s = "Input: \(fullDesc ? "\(inputs[i])" : "No Desc"), Prediction: \(isCorrect.predict), Real Answer: \(targets[i]), Correct: \(count)"
                 strings.append(s)
             }
+            
+            correct = count
         }
         
-        let correctPrecent = (100 * count) / CGFloat(targets.count)
+        let correctPrecent = (100 * CGFloat(correct)) / CGFloat(numOfTargets)
         
-        let stringClac = "\nCorrect In Precent: \(correctPrecent)%"
+        let stringClac = "Correct Predictions In Precent: \(correctPrecent)%"
         
         strings.append(stringClac)
         
