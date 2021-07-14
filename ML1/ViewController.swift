@@ -235,18 +235,6 @@ class ViewController: UIViewController {
         
         let c = parseCSV(contentsOfURL: NSURL(fileURLWithPath: "/Users/barak ben hur/Desktop/Projects/Data/fonts/CONSTANTIA.csv"), encoding: .utf8, error: nil)
         
-        //        let l = getFile(forResource: "letter-recognition", withExtension: "data")
-        //
-        //        let catbyteArr = getFile(forResource: "cat", withExtension: "bin")
-        //
-        //        let rainbowbyteArr = getFile(forResource: "rainbow", withExtension: "bin")
-        //
-        //        let trainbyteArr = getFile(forResource: "train", withExtension: "bin")
-        
-        /// 2 ================================================
-        
-        //        dataArr = [catbyteArr!, rainbowbyteArr!, trainbyteArr!]
-        
         var traningObj = [[CGFloat]]()
         
         var targetTarningObj = [[CGFloat]]()
@@ -256,10 +244,6 @@ class ViewController: UIViewController {
         var testingTarningObj = [[CGFloat]]()
         
         /// 3 ================================================
-        
-        //        var imageSize: Int = 16
-        
-        //        var itemSize = 769
         
         dataArr = [a, b, c] as! [[[UInt8]]]
         
