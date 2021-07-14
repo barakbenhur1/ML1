@@ -85,7 +85,7 @@ class Brain<T: Numeric & Codable>: Codable {
         print("deinit...")
     }
     
-    private init(number_of_input: Int, number_of_hidden: Int, number_of_outputs: Int, input_to_hidden: Matrix<T>, hidden_to_output: Matrix<T>, bias_hidden: Matrix<T>, bias_output: Matrix<T>, learning_rate: T = learningRate(), valueInitFunction: @escaping () -> (T)) {
+    private init(number_of_input: Int, number_of_hidden: Int, number_of_outputs: Int, label: String = "ML1" , input_to_hidden: Matrix<T>, hidden_to_output: Matrix<T>, bias_hidden: Matrix<T>, bias_output: Matrix<T>, learning_rate: T = learningRate(), valueInitFunction: @escaping () -> (T)) {
         
         self.number_of_input = number_of_input
         self.number_of_hidden = number_of_hidden
@@ -99,14 +99,14 @@ class Brain<T: Numeric & Codable>: Codable {
         self.bias_output = bias_output
     }
     
-    private convenience init(number_of_input: Int, number_of_hidden: Int, number_of_outputs: Int, learning_rate: T = learningRate(), valueInitFunction: @escaping () -> (T)) {
+    private convenience init(number_of_input: Int, number_of_hidden: Int, number_of_outputs: Int, label: String = "ML1", learning_rate: T = learningRate(), valueInitFunction: @escaping () -> (T)) {
         
-        self.init(number_of_input: number_of_input, number_of_hidden: number_of_hidden, number_of_outputs: number_of_outputs, input_to_hidden: Matrix(rows: number_of_hidden, cols: number_of_input, valueInitFunction: valueInitFunction), hidden_to_output: Matrix(rows: number_of_outputs, cols: number_of_hidden, valueInitFunction: valueInitFunction), bias_hidden: Matrix(rows: number_of_hidden, cols: 1, valueInitFunction: valueInitFunction), bias_output: Matrix(rows: number_of_outputs, cols: 1, valueInitFunction: valueInitFunction), learning_rate: learning_rate, valueInitFunction: valueInitFunction)
+        self.init(number_of_input: number_of_input, number_of_hidden: number_of_hidden, number_of_outputs: number_of_outputs, label: label, input_to_hidden: Matrix(rows: number_of_hidden, cols: number_of_input, valueInitFunction: valueInitFunction), hidden_to_output: Matrix(rows: number_of_outputs, cols: number_of_hidden, valueInitFunction: valueInitFunction), bias_hidden: Matrix(rows: number_of_hidden, cols: 1, valueInitFunction: valueInitFunction), bias_output: Matrix(rows: number_of_outputs, cols: 1, valueInitFunction: valueInitFunction), learning_rate: learning_rate, valueInitFunction: valueInitFunction)
     }
     
     private convenience init(brain: Brain<T>) {
         
-        self.init(number_of_input: brain.number_of_input, number_of_hidden: brain.number_of_hidden, number_of_outputs: brain.number_of_outputs, input_to_hidden:  Matrix(other: brain.input_to_hidden), hidden_to_output:  Matrix(other: brain.hidden_to_output), bias_hidden: Matrix(other: brain.bias_hidden), bias_output: Matrix(other: brain.bias_output), learning_rate: brain.learning_rate, valueInitFunction:  brain.valueInitFunction)
+        self.init(number_of_input: brain.number_of_input, number_of_hidden: brain.number_of_hidden, number_of_outputs: brain.number_of_outputs, label: brain.label, input_to_hidden:  Matrix(other: brain.input_to_hidden), hidden_to_output:  Matrix(other: brain.hidden_to_output), bias_hidden: Matrix(other: brain.bias_hidden), bias_output: Matrix(other: brain.bias_output), learning_rate: brain.learning_rate, valueInitFunction:  brain.valueInitFunction)
     }
     
     func changeSize(number_of_input: Int, number_of_hidden: Int, number_of_outputs: Int, valueInitFunction: @escaping (() -> (T)) = Brain<T>.random) {
@@ -208,20 +208,20 @@ class Brain<T: Numeric & Codable>: Codable {
         let name = String(describing: file)
         
         singalSem?.wait()
-        if Brain<T>.getInstances()![name] == nil {
-            let o = Brain<T>(number_of_input: number_of_input, number_of_hidden: number_of_hidden, number_of_outputs: number_of_outputs, learning_rate: learning_rate ?? Brain<T>.learningRate(), valueInitFunction: initFunction ?? Brain<T>.random)
-            Brain<T>.addInstances(key: name, value: o)
+        
+        if let brain = Brain<T>.getInstances()![name] {
+           return brain
         }
         
         defer {
             singalSem?.signal()
         }
         
-        let brain = Brain<T>.getInstances()![name]!
+        let brain = Brain<T>(number_of_input: number_of_input, number_of_hidden: number_of_hidden, number_of_outputs: number_of_outputs, label: name, learning_rate: learning_rate ?? Brain<T>.learningRate(), valueInitFunction: initFunction ?? Brain<T>.random)
         
-        brain.label = file
+        let returnedBrain = Brain<T>.addInstances(key: name, value: brain)
         
-        return brain
+        return returnedBrain
     }
     
     static func create<T: Numeric>(label: String = #file, number_of_input: Int, number_of_hidden: Int, number_of_outputs: Int, learning_rate: T? = nil, valueInitFunction: (() -> (T))? = nil) -> Brain<T> {
@@ -602,7 +602,7 @@ class Brain<T: Numeric & Codable>: Codable {
         }
     }
     
-    private static func addInstances(key: String, value: Brain<T>) {
+    @discardableResult private static func addInstances(key: String, value: Brain<T>) -> Brain<T> {
         switch T.self {
         case is CGFloat.Type:
             Brain<CGFloat>.addValue(key: key, value: value as! Brain<CGFloat>)
@@ -615,6 +615,8 @@ class Brain<T: Numeric & Codable>: Codable {
         default:
             fatalError("Unsupported Type")
         }
+        
+        return value
     }
 }
 

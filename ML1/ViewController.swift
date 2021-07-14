@@ -528,7 +528,7 @@ class ViewController: UIViewController {
     @objc func save() {
         ml(on: false)
         
-        let success = brain?.save(name: label)
+        let success = brain?.save(name: brain!.getLabel())
         
         print(success!)
         
