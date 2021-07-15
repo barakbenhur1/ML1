@@ -609,9 +609,10 @@ class ViewController: UIViewController {
                          }, completed: {
                             
                             for i in 0..<targetsTest.count {
-                                guard i % 10 == 0 || i == targets.count - 1 else {
-                                    return
+                                guard i % 4 == 0 || i == targets.count - 1 else {
+                                    continue
                                 }
+                                
                                 updateImage(targetsTest[i].firstIndex(where: { num in
                                     return num == 1
                                 })!, i)
@@ -620,7 +621,7 @@ class ViewController: UIViewController {
                             print()
                             print()
                             let s = " .... Done .... "
-                            brain?.printDescription(inputs: inputsTest, targets: targetsTest, title: s, fullDesc:  true)
+                            brain?.printDescription(inputs: inputsTest, targets: targetsTest, title: s, fullDesc: true)
                             
                             print(s)
                          })

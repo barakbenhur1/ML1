@@ -116,6 +116,16 @@ class Brain<T: Numeric & Codable>: Codable {
         bias_output.chanceSize(newRows: number_of_outputs, newCols: 1, valueInitFunction: valueInitFunction)
     }
     
+    func predictIndex(inputs: [T]) -> Int {
+        let predict = predict(inputs: inputs)
+        
+        let max = predict.max { a, b in
+            return Brain<T>.compere(a: a,b: b)
+        }
+        
+        return predict.firstIndex(of: max!)!
+    }
+    
     func predict(inputs: [T]) -> [T] {
         sem?.wait()
         let inputsMatrix = Matrix<T>.fromMatrixArray(other: [inputs])
