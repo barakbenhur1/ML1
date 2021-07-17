@@ -21,6 +21,7 @@ class ViewController: UIViewController {
     var startButton : UIButton!
     var saveButton: UIButton!
     var loadButton : UIButton!
+    var convLabel: UILabel!
     
     var a: CGFloat!
     var b: CGFloat!
@@ -271,7 +272,7 @@ class ViewController: UIViewController {
         let colors: [UIColor] = [.systemIndigo, .magenta, .systemPink, .systemOrange, .systemYellow, .systemPurple, .systemBlue, .systemGreen, .brown, .black, .systemGray]
         var index = 0
         
-        let loading = Timer(timeInterval: 0.2, repeats: true) { _ in
+        let loading = Timer(timeInterval: 0.1, repeats: true) { _ in
             let text = "Loading Data"
             let attr = NSMutableAttributedString(string: text)
             var space = 0
@@ -347,7 +348,7 @@ class ViewController: UIViewController {
                     let imageArr = [UInt8](dataArr[i][n]).map { 255 - $0 }
 
                     let imageNormalArr: [CGFloat] = imageArr.map { CGFloat($0) / CGFloat(pixelNormal) }
-
+                    
                     if CGFloat(n) < CGFloat(total) * traningDataRatio {
                         traningObj.append(imageNormalArr)
                         targetTarningObj.append(targesArr)
@@ -380,45 +381,45 @@ class ViewController: UIViewController {
                     }
                 }
             }
-
+            
             DispatchQueue.main.async {
                 loading.invalidate()
                 loadingLabel.removeFromSuperview()
             }
-
+            
             /// 4  ================================================
-
+            
             let indexForLength = 0
-
+            
             label = "ML1"
-
+            
             inputs = traningObj
             
             inputsConvolution = convTraningObj
             
             inputsTestConvolution = convTestingObj
-
+            
             targets = targetTarningObj
-
+            
             number_of_input = inputs[indexForLength].count
-
+            
             number_of_hidden = 64
-
+            
             number_of_outputs = targets[indexForLength].count
-
-            iterations = 10
-
+            
+            iterations = 4
+            
             numberOfTraningsForIteration = inputs.count
-
+            
             inputsTest = testingObj
-
+            
             targetsTest = testingTarningObj
-
+            
             complete()
         }
     }
     
-    var updateImage: ((_ label: Int, _ inputs: [CGFloat], _ index: Int) -> ())!
+    var updateImage: ((_ label: Int, _ inputs: [CGFloat], _ index: Int, _ percent: CGFloat) -> ())!
     
     var ui = false
     
@@ -452,14 +453,41 @@ class ViewController: UIViewController {
         imageWrraperSubview.layer.cornerRadius = 10
         imageWrraperSubview.backgroundColor = .white
         
+        let bar = UIProgressView(progressViewStyle: .default)
+        bar.frame = CGRect(origin: CGPoint(x: imageWrraperSubview.frame.origin.x, y: imageWrraperView.bounds.origin.y + 310), size: CGSize(width: 180, height: 100))
+        
+        bar.backgroundColor = .red
+        bar.tintColor = .green
+        
+        bar.layer.cornerRadius = 4.8
+        
+        bar.transform = bar.transform.scaledBy(x: 1, y: 2.4)
+        
+        convLabel = UILabel(frame: CGRect(origin: CGPoint(x: imageWrraperSubview.bounds.origin.x + 9, y: imageWrraperSubview.bounds.origin.y + 9), size: CGSize(width: 100, height: 100)))
+        convLabel.numberOfLines = 0
+        convLabel.textAlignment = .center
+            convLabel.text = "Applying\nConvolution"
+            convLabel.alpha = 0
+        
         let imageView = UIImageView(frame:  CGRect(origin: CGPoint(x: imageWrraperSubview.bounds.origin.x + 9, y: imageWrraperSubview.bounds.origin.y + 9), size: CGSize(width: 100, height: 100)))
         
+        imageWrraperSubview.addSubview(convLabel)
         imageWrraperSubview.addSubview(imageView)
         imageWrraperView.addSubview(imageWrraperSubview)
-        
+        imageWrraperView.addSubview(bar)
+
         imageWrraperView.backgroundColor = .systemGray
         
+        bar.center = CGPoint(x: imageWrraperView.center.x - 10 , y:  bar.center.y)
         imageWrraperSubview.center = CGPoint(x: imageWrraperView.center.x - 10 , y:  imageWrraperView.center.y - 90)
+        
+        let barLabel = UILabel(frame: CGRect(origin: CGPoint(x: bar.center.x - 170, y: imageWrraperView.bounds.origin.y + 280), size: CGSize(width: 340, height: 20)))
+        barLabel.text = "Correct In Percent:"
+        barLabel.font = .boldSystemFont(ofSize: 18)
+        barLabel.numberOfLines = 0
+        barLabel.textAlignment = .center
+        
+        imageWrraperView.addSubview(barLabel)
         
         titleLabel.alpha = 0.5
         sperLabel.alpha = 0.5
@@ -486,19 +514,19 @@ class ViewController: UIViewController {
             self.view.addSubview(imageWrraperView)
         }
         
-        updateImage = { [self] label, inputs, index in
+        updateImage = { [self] label, inputs, index, percent in
             
             frameCount += 1
             
             guard startImage || frameCount % frameRate == 0 else  { return }
-                
+            
             startImage = false
             
             let nextImage = {
                 DispatchQueue.main.async {
                     title.alpha = 0.2
                     imageView.alpha = 0.06
-
+                    
                     var arr = self.inputs[index].map { UInt8($0 * 255) }
                     let size = sqrt(Double(self.inputs[index].count))
                     let image = byteArrayToCGImage(raw: &arr, w: Int(size), h: Int(size))
@@ -523,10 +551,15 @@ class ViewController: UIViewController {
                     
                     title.attributedText = attr
                     
+                    barLabel.isHidden = percent < 0
+                    bar.isHidden = percent < 0
+                    
                     UIView.animate(withDuration: 0.4, delay: 0, options: .curveEaseIn) {
                         title.alpha = 1
                         imageView.image = UIImage(cgImage: image!)
                         imageView.alpha = 1
+                        barLabel.text = "Correct In Percent: \(String(format: "%.2f",  100 * percent))%"
+                        bar.progress = Float(percent)
                     }
                 }
             }
@@ -589,14 +622,8 @@ class ViewController: UIViewController {
             brain?.changeSize(number_of_input: number_of_input, number_of_hidden: number_of_hidden, number_of_outputs: number_of_outputs)
             label = brain!.getLabel()
             
-            brain?.setTraindIndex(traindIndex: { target, inputs, index in
-                updateImage(target.firstIndex(where: { num in
-                    return num == 1
-                })!, inputs , index)
-            }, complete: {
-                print(true)
-                mlStart()
-            })
+            print(true)
+            mlStart()
         }
         
         ml(on: true)
@@ -607,13 +634,13 @@ class ViewController: UIViewController {
             self.startButton.isEnabled = on
             self.saveButton.isEnabled = on
             self.loadButton.isEnabled = on
-//            self.frameRate = 2
+            //            self.frameRate = 2
         }
     }
     
     var uiUp = 0
     
-    func upadteUI(target: [CGFloat], inputs: [CGFloat], index: Int) {
+    func upadteUI(target: [CGFloat], inputs: [CGFloat], index: Int, percent: CGFloat) {
         guard uiUp % 10 == 0 || uiUp == target.count - 1 else {
             uiUp += 1
             return
@@ -623,45 +650,60 @@ class ViewController: UIViewController {
         
         updateImage(target.firstIndex(where: { num in
             return num == 1
-        })!,inputs, index)
+        })!,inputs, index, percent)
     }
     
     func mlStart() {
         
         uiUp = 0
-
+        
         DispatchQueue(label: "work").async { [self] in
+            
+//            let timer = Timer(timeInterval: 1.6, repeats: true) { _ in
+//                UIView.animate(withDuration: 0.8) {
+//                    self.convLabel.alpha = 0.2
+//                }
+//                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+//                    UIView.animate(withDuration: 0.8) {
+//                        self.convLabel.alpha = 1
+//                    }
+//                }
+//            }
+//
+//            DispatchQueue.main.async {
+//                self.convLabel.alpha = 1
+//
+//                RunLoop.current.add(timer, forMode: .common)
+//            }
+            
             brain?.start(inputs: inputs, targets: targets, numberOfEpochs: iterations, numberOfTranings: numberOfTraningsForIteration,
-                         traindIndex: { target, inputs, index in
-                            upadteUI(target: target, inputs: inputs, index: index)
+                         //                                    convolutionFinish: {
+                         //                                        DispatchQueue.main.async {
+                         //                                            timer.invalidate()
+                         //                                            self.convLabel.alpha = 0
+                         //                                        }
+                         //                                    }
+                         traindIndex: { target, inputs, index, percent in
+                            upadteUI(target: target, inputs: inputs, index: index, percent: percent)
                          },
                          batchFinish: { cycles in
                             let batchFinish = " ( Batch Finish ) "
-                            brain?.printDescription(inputs: inputs, targets: targets, title: batchFinish, numOfTest: cycles)
+                            brain?.printDescription(title: batchFinish, numOfTest: cycles)
                          },
                          progressUpdate: { iteration, loss in
                             let iter = " ( Iteration: \(iteration) ) "
                             
-                            brain?.printDescription(inputs: inputs, targets: targets, title: iter)
+                            brain?.printDescription(title: iter)
                             
                             print()
                             
                          }, completed: {
-                            
-                            for i in 0..<targetsTest.count {
-                                guard i % 4 == 0 || i == targets.count - 1 else {
-                                    continue
-                                }
-                                
-                                updateImage(targetsTest[i].firstIndex(where: { num in
-                                    return num == 1
-                                })!, inputs[i], i)
-                            }
-                            
                             print()
                             print()
                             let s = " .... Done .... "
-                            brain?.printDescription(inputs: inputsTest, targets: targetsTest, title: s, fullDesc: true)
+                            brain?.printDescription(inputs: inputsTest, targets: targetsTest, title: s, fullDesc: true, update: { target, input, index, precent in
+                                upadteUI(target: target, inputs: input, index: index, percent: precent)
+                            })
                             
                             print(s)
                          })

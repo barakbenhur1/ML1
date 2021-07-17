@@ -51,6 +51,12 @@ public class Matrix<T: Numeric & Codable>: Codable {
             return arr
         }
     }
+    
+    var matrixValues: [[T]] {
+        get {
+            return rawValues
+        }
+    }
 
     private lazy var description = {
         return String(UInt(bitPattern: ObjectIdentifier(self)))

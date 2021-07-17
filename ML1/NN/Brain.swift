@@ -324,22 +324,32 @@ public class Brain<T: Numeric & Codable>: Codable {
         stopRun = true
     }
     
-    func startConvolution(inputs: [[[T]]], targets: [[T]], numberOfEpochs: Int? = nil, numberOfTranings: Int? = nil, batchSize: Int = 64, file: String = #file, line: Int = #line, function: String = #function, hiddenActivtionMethod: ActivationMethod = .sigmoid, outputActivtionMethod: ActivationMethod = .softMax, maxCalculate: (_ a: T, _ b: T) -> (T) = Brain<T>.maxCalculate, valueInitFunction: (() -> (T))? = nil, traindIndex: (([T],[T], Int) -> ())? = nil, batchFinish: ((Int) -> ())? = nil, progressUpdate: ((_ iteration: Int, _ loass: T) -> ())? = nil, completed: (() -> ())? = nil) {
+    func startConvolution(convolutionIterations: Int = 2, kernelSize: Int = 5, inputs: [[[T]]], targets: [[T]], numberOfEpochs: Int? = nil, numberOfTranings: Int? = nil, batchSize: Int = 64, file: String = #file, line: Int = #line, function: String = #function, hiddenActivtionMethod: ActivationMethod = .sigmoid, outputActivtionMethod: ActivationMethod = .softMax, convolutionFinish: (() -> ())? = nil ,  maxCalculate: (_ a: T, _ b: T) -> (T) = Brain<T>.maxCalculate, valueInitFunction: (() -> (T))? = nil, traindIndex: (([T],[T], Int, _ percent: CGFloat) -> ())? = nil, batchFinish: ((Int) -> ())? = nil, progressUpdate: ((_ iteration: Int, _ loass: T) -> ())? = nil, completed: (() -> ())? = nil) {
         
-        var newInputs = [[T]]()
         
-        for input in inputs {
-            let covMat = try? Matrix<T>.convolution(matrixs: Matrix<T>(literalMatrix: input), kernels: Matrix<T>(rows: 10, cols: 10, valueInitFunction: valueInitFunction ?? Brain<T>.random), max: maxCalculate)
+        var inputForConv = inputs.map { Matrix(literalMatrix: $0) }
+        
+        for _ in 0..<convolutionIterations {
+            var convMatrixs = [Matrix<T>]()
+            for input in inputForConv {
+                let covMat = try? Matrix<T>.convolution(matrixs: input, kernels: Matrix<T>(rows: kernelSize, cols: kernelSize, valueInitFunction: valueInitFunction ?? Brain<T>.random), max: maxCalculate)
+                
+                convMatrixs.append(covMat!)
+            }
             
-            newInputs.append(covMat!.values)
+            inputForConv = convMatrixs
         }
+        
+        let newInputs = inputForConv.map { $0.values }
+        
+        convolutionFinish?()
         
         start(inputs: newInputs, targets: targets, numberOfEpochs: numberOfEpochs, numberOfTranings: numberOfTranings, batchSize: batchSize, file: file, line: line, function: function, hiddenActivtionMethod: hiddenActivtionMethod, outputActivtionMethod: outputActivtionMethod, traindIndex: traindIndex, batchFinish: batchFinish, progressUpdate: progressUpdate, completed: completed)
     }
     
     private var correctPredictions = 0
     
-    func start(inputs: [[T]], targets: [[T]], numberOfEpochs: Int? = nil, numberOfTranings: Int? = nil, batchSize: Int = 64, file: String = #file, line: Int = #line, function: String = #function, hiddenActivtionMethod: ActivationMethod = .sigmoid, outputActivtionMethod: ActivationMethod = .softMax, traindIndex: (([T], [T], Int) -> ())? = nil, batchFinish: ((Int) -> ())? = nil, progressUpdate: ((_ iteration: Int, _ loass: T) -> ())? = nil, completed: (() -> ())? = nil) {
+    func start(inputs: [[T]], targets: [[T]], numberOfEpochs: Int? = nil, numberOfTranings: Int? = nil, batchSize: Int = 64, file: String = #file, line: Int = #line, function: String = #function, hiddenActivtionMethod: ActivationMethod = .sigmoid, outputActivtionMethod: ActivationMethod = .softMax, traindIndex: (([T], [T], Int, _ percent: CGFloat) -> ())? = nil, batchFinish: ((Int) -> ())? = nil, progressUpdate: ((_ iteration: Int, _ loass: T) -> ())? = nil, completed: (() -> ())? = nil) {
 
         stopRun = false
         stopStatic = false
@@ -356,6 +366,7 @@ public class Brain<T: Numeric & Codable>: Codable {
             guard !stopRun && !stopStatic else { return }
             var batchSum = 0
             correctPredictions = 0
+            var numOfPredict: CGFloat = 0
             while batchSum < randomCaycles {
                 guard !stopRun && !stopStatic else { return }
                 for _ in 0..<min(batchSize, randomCaycles - batchSum) {
@@ -363,18 +374,20 @@ public class Brain<T: Numeric & Codable>: Codable {
                     
                     train(inputs: inputs[index], targets: targets[index])
                     
-                    traindIndex?(targets[index], inputs[index], index)
-                    
                     let isCorrect = isCorrect(inputs: inputs[index], targets: targets[index])
                     
                     if isCorrect.correct {
                         correctPredictions += 1
                     }
+                    
+                    numOfPredict += 1
+                    
+                    traindIndex?(targets[index], inputs[index], index, CGFloat(correctPredictions) / numOfPredict)
                 }
                 
                 batchSum += batchSize
                 
-                batchFinish?(min(batchSum, randomCaycles))
+                batchFinish?(Int(numOfPredict))
             }
             
             progressUpdate?(i, 0)
@@ -383,9 +396,9 @@ public class Brain<T: Numeric & Codable>: Codable {
         completed?()
     }
     
-    private var traindIndex: (([T],[T], Int) -> ())?
+    private var traindIndex: (([T],[T], Int, CGFloat) -> ())?
     
-    static func start(inputs: [[T]], targets: [[T]], number_of_hidden: Int = 2, learning_rate: T? = nil, numberOfEpochs: Int? = nil, numberOfTranings: Int? = nil, batchSize: Int = 64, file: String = #file, line: Int = #line, function: String = #function, hiddenActivtionMethod: ActivationMethod = .sigmoid, outputActivtionMethod: ActivationMethod = .softMax, valueInitFunction: (() -> (T))? = nil, brainObj: ((Brain<T>) -> ())? = nil, traindIndex: (([T],[T], Int) -> ())? = nil, batchFinish: ((Int) -> ())? = nil, progressUpdate:((_ iteration: Int, _ loass: T) -> ())? = nil, completed: (() -> ())? = nil) {
+    static func start(inputs: [[T]], targets: [[T]], number_of_hidden: Int = 2, learning_rate: T? = nil, numberOfEpochs: Int? = nil, numberOfTranings: Int? = nil, batchSize: Int = 64, file: String = #file, line: Int = #line, function: String = #function, hiddenActivtionMethod: ActivationMethod = .sigmoid, outputActivtionMethod: ActivationMethod = .softMax, valueInitFunction: (() -> (T))? = nil, brainObj: ((Brain<T>) -> ())? = nil, traindIndex: (([T],[T], Int, _ percent: CGFloat) -> ())? = nil, batchFinish: ((Int) -> ())? = nil, progressUpdate:((_ iteration: Int, _ loass: T) -> ())? = nil, completed: (() -> ())? = nil) {
         
         let brain = Brain<T>.create(file: file, number_of_input: inputs[0].count, number_of_hidden: number_of_hidden, number_of_outputs: targets[0].count, learning_rate: learning_rate ?? Brain<T>.learningRate(), initFunction: {
             return valueInitFunction != nil ? valueInitFunction!() : Brain<T>.random()
@@ -396,7 +409,7 @@ public class Brain<T: Numeric & Codable>: Codable {
         brain.start(inputs: inputs, targets: targets, numberOfEpochs: numberOfEpochs, numberOfTranings: numberOfTranings, batchSize: batchSize, hiddenActivtionMethod: hiddenActivtionMethod, outputActivtionMethod: outputActivtionMethod, traindIndex: traindIndex, batchFinish: batchFinish, progressUpdate: progressUpdate, completed: completed)
     }
     
-    func setTraindIndex(traindIndex: (([T],[T], Int) -> ())?, complete: (() -> ())? = nil) {
+    func setTraindIndex(traindIndex: (([T],[T], Int, _ percent: CGFloat) -> ())?, complete: (() -> ())? = nil) {
         self.traindIndex = traindIndex
         complete?()
     }
@@ -438,7 +451,7 @@ public class Brain<T: Numeric & Codable>: Codable {
         return (predict, correct)
     }
     
-    func printDescription(inputs:[[T]], targets: [[T]], title: String, numOfTest: Int? = nil, fullDesc: Bool = false) {
+    func printDescription(inputs:[[T]] = [[T]](), targets: [[T]] = [[T]](), title: String, numOfTest: Int? = nil, fullDesc: Bool = false, update: (([T], [T], Int, CGFloat) -> ())? = nil) {
         
         var strings = [String]()
         var correct = correctPredictions
@@ -454,8 +467,9 @@ public class Brain<T: Numeric & Codable>: Codable {
                     count += 1
                 }
                 
-                let s = "Input: \(fullDesc ? "\(inputs[i])" : "No Desc"), Prediction: \(isCorrect.predict), Real Answer: \(targets[i]), Correct: \(count) Out Off: \(numOfTargets)"
+                let s = "Input: \(fullDesc ? "\(inputs[i])" : "No Desc"), Prediction: \(isCorrect.predict), Real Answer: \(targets[i])"
                 strings.append(s)
+                update?(targets[i], inputs[i], i, CGFloat(count) / CGFloat(i))
             }
             
             correct = count
@@ -463,8 +477,10 @@ public class Brain<T: Numeric & Codable>: Codable {
         
         let correctPrecent = (100 * CGFloat(correct)) / CGFloat(numOfTargets)
         
+        let stringRatio = "Correct: \(correct) Out Off: \(numOfTargets)"
         let stringClac = "Correct Predictions In Precent: \(correctPrecent)%"
         
+        strings.append(stringRatio)
         strings.append(stringClac)
         
         var max = 0
