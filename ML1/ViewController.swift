@@ -26,9 +26,11 @@ class ViewController: UIViewController {
     var b: CGFloat!
     
     var inputs: [[CGFloat]] = [[0, 0], [1, 0], [0, 1], [1, 1]]
+    var inputsConvolution: [[[CGFloat]]] = [[[0, 0], [1, 0], [0, 1], [1, 1]]]
     var targets: [[CGFloat]] = [[0], [1] ,[1], [0]]
     
     var inputsTest: [[CGFloat]] = [[0, 0], [1, 0], [0, 1], [1, 1]]
+    var inputsTestConvolution: [[[CGFloat]]] = [[[0, 0], [1, 0], [0, 1], [1, 1]]]
     var targetsTest: [[CGFloat]] = [[0], [1] ,[1], [0]]
     
     var categorys: [String] = [String]()
@@ -305,10 +307,14 @@ class ViewController: UIViewController {
             }
 
             var traningObj = [[CGFloat]]()
+            
+            var convTraningObj = [[[CGFloat]]]()
 
             var targetTarningObj = [[CGFloat]]()
 
             var testingObj = [[CGFloat]]()
+            
+            var convTestingObj = [[[CGFloat]]]()
 
             var testingTarningObj = [[CGFloat]]()
 
@@ -345,10 +351,32 @@ class ViewController: UIViewController {
                     if CGFloat(n) < CGFloat(total) * traningDataRatio {
                         traningObj.append(imageNormalArr)
                         targetTarningObj.append(targesArr)
+                        
+                        var matrix = [[CGFloat]]()
+                        let len = Int(sqrt(CGFloat(imageNormalArr.count)))
+                        for i in 0..<len {
+                            matrix.append([CGFloat]())
+                            for j in 0..<len {
+                                matrix[i].append(imageNormalArr[i * len + j])
+                            }
+                        }
+                        
+                        convTraningObj.append(matrix)
                     }
                     else {
                         testingObj.append(imageNormalArr)
                         testingTarningObj.append(targesArr)
+                        
+                        var matrix = [[CGFloat]]()
+                        let len = Int(sqrt(CGFloat(imageNormalArr.count)))
+                        for i in 0..<len {
+                            matrix.append([CGFloat]())
+                            for j in 0..<len {
+                                matrix[i].append(imageNormalArr[i * len + j])
+                            }
+                        }
+                        
+                        convTestingObj.append(matrix)
                     }
                 }
             }
@@ -365,6 +393,10 @@ class ViewController: UIViewController {
             label = "ML1"
 
             inputs = traningObj
+            
+            inputsConvolution = convTraningObj
+            
+            inputsTestConvolution = convTestingObj
 
             targets = targetTarningObj
 
@@ -386,7 +418,7 @@ class ViewController: UIViewController {
         }
     }
     
-    var updateImage: ((_ label: Int, _ index: Int) -> ())!
+    var updateImage: ((_ label: Int, _ inputs: [CGFloat], _ index: Int) -> ())!
     
     var ui = false
     
@@ -454,7 +486,7 @@ class ViewController: UIViewController {
             self.view.addSubview(imageWrraperView)
         }
         
-        updateImage = { [self] label, index in
+        updateImage = { [self] label, inputs, index in
             
             frameCount += 1
             
@@ -467,10 +499,10 @@ class ViewController: UIViewController {
                     title.alpha = 0.2
                     imageView.alpha = 0.06
 
-                    var arr = inputs[index].map { UInt8($0 * 255) }
-                    let size = sqrt(Double(inputs[index].count))
+                    var arr = self.inputs[index].map { UInt8($0 * 255) }
+                    let size = sqrt(Double(self.inputs[index].count))
                     let image = byteArrayToCGImage(raw: &arr, w: Int(size), h: Int(size))
-                    let predict = brain?.predict(inputs: inputs[index])
+                    let predict = brain?.predict(inputs: inputs)
                     let max = predict!.max()
                     let mlIndex = predict?.firstIndex(of: max!)
                     let real = "Font Is: "
@@ -513,7 +545,7 @@ class ViewController: UIViewController {
             
             uiFunc()
             
-            brain = Brain<CGFloat>.create(label: label ,number_of_input: number_of_input, number_of_hidden: number_of_hidden, number_of_outputs: number_of_outputs)
+            brain = Brain<CGFloat>.create(label: label ,number_of_input: number_of_input, number_of_hidden: number_of_hidden, number_of_outputs: number_of_outputs, learning_rate: 0.18)
         }
         
         print(true)
@@ -557,10 +589,10 @@ class ViewController: UIViewController {
             brain?.changeSize(number_of_input: number_of_input, number_of_hidden: number_of_hidden, number_of_outputs: number_of_outputs)
             label = brain!.getLabel()
             
-            brain?.setTraindIndex(traindIndex: { target, index in
+            brain?.setTraindIndex(traindIndex: { target, inputs, index in
                 updateImage(target.firstIndex(where: { num in
                     return num == 1
-                })!, index)
+                })!, inputs , index)
             }, complete: {
                 print(true)
                 mlStart()
@@ -575,31 +607,39 @@ class ViewController: UIViewController {
             self.startButton.isEnabled = on
             self.saveButton.isEnabled = on
             self.loadButton.isEnabled = on
-            self.frameRate = 2
+//            self.frameRate = 2
         }
     }
     
     var uiUp = 0
+    
+    func upadteUI(target: [CGFloat], inputs: [CGFloat], index: Int) {
+        guard uiUp % 10 == 0 || uiUp == target.count - 1 else {
+            uiUp += 1
+            return
+        }
+        
+        uiUp += 1
+        
+        updateImage(target.firstIndex(where: { num in
+            return num == 1
+        })!,inputs, index)
+    }
     
     func mlStart() {
         
         uiUp = 0
 
         DispatchQueue(label: "work").async { [self] in
-            brain?.start(inputs: inputs, targets: targets, iterations: iterations, numberOfTraningsForIteration: numberOfTraningsForIteration,
-                         traindIndex: { target, index in
-                            guard uiUp % 10 == 0 || uiUp == targets.count - 1 else {
-                                uiUp += 1
-                                return
-                            }
-                            
-                            uiUp += 1
-                            
-                            updateImage(target.firstIndex(where: { num in
-                                return num == 1
-                            })!, index)
+            brain?.start(inputs: inputs, targets: targets, numberOfEpochs: iterations, numberOfTranings: numberOfTraningsForIteration,
+                         traindIndex: { target, inputs, index in
+                            upadteUI(target: target, inputs: inputs, index: index)
                          },
-                         progressUpdate: { iteration in
+                         batchFinish: { cycles in
+                            let batchFinish = " ( Batch Finish ) "
+                            brain?.printDescription(inputs: inputs, targets: targets, title: batchFinish, numOfTest: cycles)
+                         },
+                         progressUpdate: { iteration, loss in
                             let iter = " ( Iteration: \(iteration) ) "
                             
                             brain?.printDescription(inputs: inputs, targets: targets, title: iter)
@@ -615,7 +655,7 @@ class ViewController: UIViewController {
                                 
                                 updateImage(targetsTest[i].firstIndex(where: { num in
                                     return num == 1
-                                })!, i)
+                                })!, inputs[i], i)
                             }
                             
                             print()

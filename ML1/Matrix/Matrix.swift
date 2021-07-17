@@ -51,7 +51,7 @@ public class Matrix<T: Numeric & Codable>: Codable {
             return arr
         }
     }
-    
+
     private lazy var description = {
         return String(UInt(bitPattern: ObjectIdentifier(self)))
     }()
@@ -75,7 +75,15 @@ public class Matrix<T: Numeric & Codable>: Codable {
     init(other: Matrix) {
         self.mrows = other.mrows
         self.mcols = other.mcols
+        self.valueInitFunction = other.valueInitFunction
         self.rawValues = [[T]](other.rawValues)
+    }
+    
+    init(literalMatrix: [[T]]) {
+        guard literalMatrix.count > 0 else { fatalError("Matrix Must Have At Laest 1 Row") }
+        self.mrows = literalMatrix.count
+        self.mcols = literalMatrix[0].count
+        self.rawValues = [[T]](literalMatrix)
     }
     
     func chanceSize(newRows: Int, newCols: Int, valueInitFunction: @escaping (() -> (T)) = { return .zero }) {
@@ -100,9 +108,9 @@ public class Matrix<T: Numeric & Codable>: Codable {
     }
     
     func initRawData() {
-        for i in 0..<rows {
+        for i in 0..<mrows {
             rawValues.append([])
-            for _ in 0..<cols {
+            for _ in 0..<mcols {
                 rawValues[i].append((valueInitFunction != nil ? valueInitFunction!() : .zero))
             }
         }
@@ -135,6 +143,56 @@ public class Matrix<T: Numeric & Codable>: Codable {
         return result
     }
     
+    static func convolution(matrixs: Matrix<T>..., kernels: Matrix<T>..., strideSize: Int = 1, max: (T, T) -> (T)) throws -> Matrix<T> {
+        guard matrixs.count == kernels.count else { throw MatrixError.convolution(channelA: matrixs.count, channelB: kernels.count) }
+        do {
+            var channels = [Matrix<T>]()
+            for depth in 0..<matrixs.count {
+                let dimRows = kernels[depth].mrows * ((matrixs[depth].mrows / kernels[depth].mrows) + 1)
+                let dimCols = kernels[depth].mcols * ((matrixs[depth].mcols / kernels[depth].mcols) + 1)
+                
+                channels.append(try Matrix.mainLoop(rows: dimRows, cols: dimCols) { i, j, matrix in
+                    for m in stride(from: 0, to: kernels[depth].mrows, by: strideSize) {
+                        for n in stride(from: 0, to: kernels[depth].mcols, by: strideSize) {
+                            let kernelCellValue = kernels[depth][n][m]
+                            let matrixCellValue = i + n < matrixs[depth].mrows && j + m < matrixs[depth].mcols ?  matrixs[depth][i + n][j + m] : 0
+                            matrix[i][j] += kernelCellValue * matrixCellValue
+                        }
+                    }
+                })
+            }
+            
+            let oneChannelsMatrix = Matrix(rows: channels[0].mrows, cols: channels[0].mcols)
+            
+            for channel in channels { oneChannelsMatrix.add(other: channel, scalar: 1) }
+            
+            return try maxPooling(matrix: oneChannelsMatrix, max: max)
+        }
+        catch { throw error }
+    }
+    
+    private static func maxPooling(matrix: Matrix<T>, size: Int = 5, max: (T, T) -> (T)) throws -> Matrix<T> {
+            let rows = size
+            let cols = size
+            
+            do {
+                return try mainLoop(rows: rows, cols: cols, calcFunc: { i, j, result in
+                    var maxVal: T? = nil
+                    for n in 0..<matrix.mrows - result.mrows {
+                        for m in 0..<matrix.cols - result.mcols {
+                            if maxVal == nil || matrix[i + n][j + m] == max(maxVal!, matrix[i + n][j + m]) {
+                                maxVal = matrix[i + n][j + m]
+                            }
+                        }
+                    }
+                    
+                    result[i][i] = maxVal!
+                })
+            }
+            catch { throw error }
+        }
+    
+    
     @discardableResult func add(n: T) -> Matrix {
         let matrix = try! Matrix.mainLoop(rows: mrows, cols: mcols) { i, j, matrix in matrix[i][j] = self[i][j] + n }
         rawValues = matrix.rawValues
@@ -143,9 +201,9 @@ public class Matrix<T: Numeric & Codable>: Codable {
         return self
     }
     
-    @discardableResult func add(other: Matrix) -> Matrix {
+    @discardableResult func add(other: Matrix, scalar: T = 0) -> Matrix {
         guard mrows == other.mrows && mcols == other.mcols else { fatalError(MatrixError.wrongDimensionForInterative(rows: [mrows, other.mrows], cols: [mcols, other.mcols]).localizedDescription) }
-        let matrix = try! Matrix.mainLoop(rows: mrows, cols: mcols) { i, j, matrix in matrix[i][j] = self[i][j] + other[i][j] }
+        let matrix = try! Matrix.mainLoop(rows: mrows, cols: mcols) { i, j, matrix in matrix[i][j] = self[i][j] + other[i][j]  + scalar}
         rawValues = matrix.rawValues
         mcols = matrix.mcols
         mrows = matrix.mrows
@@ -184,7 +242,7 @@ public class Matrix<T: Numeric & Codable>: Codable {
         catch { throw error }
     }
     
-    @discardableResult func map(function: (T) -> (T)) -> Matrix {
+    @discardableResult func map(function: (Int, [T]) -> (T)) -> Matrix {
         let matrix = try! Matrix.map(m: self, function: function)
         rawValues = matrix.rawValues
         mcols = matrix.mcols
@@ -192,9 +250,13 @@ public class Matrix<T: Numeric & Codable>: Codable {
         return self
     }
     
-    static func map(m: Matrix<T>, function: (T) -> (T)) throws -> Matrix<T> {
+    static func map(m: Matrix<T>, function: (Int, [T]) -> (T)) throws -> Matrix<T> {
         do {
-            return try Matrix.mainLoop(rows: m.mrows, cols: m.mcols) { i, j, results in results[i][j] = function(m[i][j]) }
+            var arr = [T]()
+            
+            m.rawValues.forEach { row in arr.append(contentsOf: row) }
+            
+            return try Matrix.mainLoop(rows: m.mrows, cols: m.mcols) { i, j, results in results[i][j] = function((i * m[i].count) + j, arr) }
         }
         catch { throw error }
     }
@@ -243,6 +305,7 @@ extension Matrix {
 fileprivate enum MatrixError: Error & LocalizedError {
     case wrongDimensionForMultiply(rows: Int, cols: Int)
     case wrongDimensionForInterative(rows: [Int], cols: [Int])
+    case convolution(channelA: Int, channelB: Int)
     
     public var errorDescription: String? {
         switch self {
@@ -261,6 +324,8 @@ fileprivate enum MatrixError: Error & LocalizedError {
                     " And \(colsText)"
             }
             return NSLocalizedString(error, comment: "Matrix Intarative Operation")
+        case .convolution(let a, let b):
+            return NSLocalizedString("MAtrix Number Of Channels \(a) Not Equal To Kernel Number Of Channels \(b)", comment: "Matrix Intarative Operation")
         }
     }
 }
